@@ -1,0 +1,77 @@
+---
+title: "EPhyNE Guide: Fitting your data to PhyNE"
+author: "Sean McHugh"
+date: "2022-07-01"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## EPhyNE intro
+
+
+Hello and thank you for checking out EPhyNE (fka PhyNE). This guide will show how to fit a set of spatial Presence and Absence/PsuedoAbsences with corresponding environmental data (ex WorldClim or envirem) to EPhyNE and recover estimates of unimodal symmatric response curves with 3 parameters: optimum, breadth, and (optionally) tolerance. For each environmental predictor for each species and estimates of the the evolutionary model parameters. Each curve evolves under a separate multivariate brownian motion (mvBM) where the optimum and breadth (and tolerance optionally) evolve given a an ancestral root mean and variance covariance matrix describing the rates of evolution and covariance between each response curve parameter 
+
+
+NOTE: all environmental predictor response curves are currently set as uncorrelated, if trying to estimate phylogenetic niche in temperature and precipitation, the impact of precipitation and temperature on occurrence would be unlinked (no correlation estimated in species specific ENMs) and also the covariance in response curve parameters are not modeled across predicotrs, only between (such that there is a correlation between precipitation optimum and breadth but not precipitation optimum and temperature optimum)
+Covariation in these predictors is very interesting and important next step in improving this models and other similar ones.
+
+
+## Getting started: Data Format
+
+To run EPhyNE you need a dataframe loaded in from a file format such as a ".csv" (can be loaded in from an excel spreadsheet saved as a.csv file usually) with a specific row order start at leftmost: 
+-   latitude in degrees
+-   longitutde in degree
+-   species name (this must be the same exact name as the corresponding tip label in your phylogeny), 
+-   P/A value (either a 1 for presence or 0 for absence), 
+-   Environmental predictors (one per row)
+
+This on the back end get formatted as a list of lists were each list includes the species name, the vector of P/A, and vectors for the corresponding environmental predictor values.
+
+let load in the example file
+
+```{r, echo=FALSE, results='asis'}
+
+data(ENA_pl)
+
+```
+
+
+## Figures
+
+The figure sizes have been customised so that you can easily put two images side-by-side. 
+
+```{r, fig.show='hold'}
+plot(1:10)
+plot(10:1)
+```
+
+You can enable figure captions by `fig_caption: yes` in YAML:
+
+    output:
+      rmarkdown::html_vignette:
+        fig_caption: yes
+
+Then you can use the chunk option `fig.cap = "Your figure caption."` in **knitr**.
+
+## More Examples
+
+You can write math expressions, e.g. $Y = X\beta + \epsilon$, footnotes^[A footnote here.], and tables, e.g. using `knitr::kable()`.
+
+```{r, echo=FALSE, results='asis'}
+knitr::kable(head(mtcars, 10))
+```
+
+Also a quote using `>`:
+
+> "He who gives up [code] safety for [code] speed deserves neither."
+([via](https://twitter.com/hadleywickham/status/504368538874703872))
