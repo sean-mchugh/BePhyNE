@@ -28,7 +28,7 @@ Covariation in these predictors is very interesting and important next step in i
 
 ## Getting started: Data Format
 
-To run EPhyNE you need a dataframe loaded in from a file format such as a ".csv" (can be loaded in from an excel spreadsheet saved as a.csv file usually) with a specific row order start at leftmost: 
+To run EPhyNE you need a dataframe loaded in from a file format such as a ".csv" (can be loaded in from an excel spreadsheet saved as a.csv file usually) with a specific column order start at leftmost: 
 -   latitude in degrees
 -   longitutde in degree
 -   species name (this must be the same exact name as the corresponding tip label in your phylogeny), 
@@ -37,41 +37,425 @@ To run EPhyNE you need a dataframe loaded in from a file format such as a ".csv"
 
 This on the back end get formatted as a list of lists were each list includes the species name, the vector of P/A, and vectors for the corresponding environmental predictor values.
 
-let load in the example file
+lets install the package and load in load in the example file which contains Presence absence data for 98 species of Plethodontid salamanders from Eastern North America (ENA_Pleth in a lot of the code) we have two macroclimate predictors from worldclim: average annual precipitation (mm) and average annual temperature (degrees Celsisus)
 
-```{r, echo=FALSE, results='asis'}
+```{r}
+#devtools::install()
+library(EPhyNE)
+library(treeplyr)
 
-data(ENA_pl)
+require(readr)
+require(tibble)
+require(MCMCpack)
+require(devtools)
+require(coda)
+require(devtools)
+require(coda)
+require(ape)
+require(truncdist)
+require(geiger)
+require(phytools)
+require(tidyr)
+require(ratematrix)
+require(mvMORPH)
+require(dplyr)
+require(mvtnorm)
+require(MultiRNG)
+require(Rphylopars)
+require(Rcpp)
+require(doParallel)
+require(corpcor)
+require(Matrix)
+require(treeplyr)
+require(bayou)
+require(crayon)
+require(shape)
+require(scales)
+require(phytools)
+require(robustbase)
+
+data(ENA_Pleth_PA)
+
+#loading in the data had an issue needed to convert rows back to numeric (except species of course)
+ENA_Pleth_PA[,c(1:2,4:6)]<-do.call(cbind,lapply(X = ENA_Pleth_PA[,c(1:2,4:6)], FUN=as.numeric))
+
+#load tree
+data(ENA_Pleth_Tree)
+
+tree<-ENA_Pleth_Tree
 
 ```
 
+Cool, lets look at some of the details of our dataset, first printing some of the first rows to get a sense of the schema, then checking the number of datapoints by checking how many rows we have. Then the number of unique species. 
 
-## Figures
+We can then extract a vector of unique genus names in the dataset using some janky code, we will just use this to plot the data in environmental and geographic space.
+```{r, echo=FALSE, results='asis'}
+#knitr::kable(head(ENA_Pleth_PA, 10))
+```
 
-The figure sizes have been customised so that you can easily put two images side-by-side. 
 
+```{r}
+# number of rows
+nrow(ENA_Pleth_PA)
+
+#number of unique species
+species=as.list(unique(ENA_Pleth_PA$species))
+
+names(species)<-species
+
+genera<-unique(unlist(lapply(tree$tip.label, function(x) scan(text=x, sep="_", what="", quiet=TRUE)[1])))
+```
+
+
+## Checking the Data
+
+We can plot our data both spatially and over climate space chose a species and plot (we are not going to try plotting all 82 at once)
 ```{r, fig.show='hold'}
-plot(1:10)
-plot(10:1)
+
+#class(ENA_Pleth_PA)
+sp<-species$Aneides_aeneus
+
+
+
+#plot occurrence data for species in Envrionmental space ("E-space")
+plot(c(min(ENA_Pleth_PA$X1),max(ENA_Pleth_PA$X1)),
+     c(max(ENA_Pleth_PA$X2),min(ENA_Pleth_PA$X2)), xlab="precip",ylab="temp",main=paste(sp, "E-space"), col=4)
+
+points(ENA_Pleth_PA[ ( ENA_Pleth_PA$species==sp & ENA_Pleth_PA$y==0 ) ,5:6], col=1)
+    
+points(ENA_Pleth_PA[ ( ENA_Pleth_PA$species==sp & ENA_Pleth_PA$y==1 ) ,5:6], col=2)
+
+
+#plot occurrence data for species in Geographic space space ("G-space")
+plot(c(min(ENA_Pleth_PA$Lat),max(ENA_Pleth_PA$Lat)),
+     c(max(ENA_Pleth_PA$Lon),min(ENA_Pleth_PA$Lon)), xlab="Lat",ylab="Lon",main=paste(sp, "G-space"), col=4)
+
+
+points(ENA_Pleth_PA[ ( ENA_Pleth_PA$species==sp & ENA_Pleth_PA$y==0 ) ,1:2], col=1)
+    
+points(ENA_Pleth_PA[ ( ENA_Pleth_PA$species==sp & ENA_Pleth_PA$y==1 ) ,1:2], col=2)
+
+
 ```
 
-You can enable figure captions by `fig_caption: yes` in YAML:
+So we have a dataset, now it is time to put it into a form EPhyNE can read, and then start setting up the details for our MCMC run. EPhyNE reads a list of lists of your PA dtaa and occurrences over each species such that for one species (the way ENA_Pleth_PA is converted to data_final makes column order essential) (NOTE: Lat and Lon are removed at this stage)
+data_final[[1]]
+       $speciesname
+       $ vector of y (1's and 0's for presences and absences)
+       $ vector X1
+       $ vector X2
+       $ vector Xetx
 
-    output:
-      rmarkdown::html_vignette:
-        fig_caption: yes
 
-Then you can use the chunk option `fig.cap = "Your figure caption."` in **knitr**.
 
-## More Examples
+```{r}
+#
+data_final<- lapply(split(ENA_Pleth_PA[3:6],ENA_Pleth_PA$species), as.list)
+#replace vector of species names with a single name
+for (sp in 1:length(data_final)) {
+  
+  data_final[[sp]]$species= data_final[[sp]]$species[[1]]
+  
+}
 
-You can write math expressions, e.g. $Y = X\beta + \epsilon$, footnotes^[A footnote here.], and tables, e.g. using `knitr::kable()`.
 
-```{r, echo=FALSE, results='asis'}
-knitr::kable(head(mtcars, 10))
+
+# match data_final species order to tree tip order 
+data_final=data_final[order(match(unlist(lapply(data_final, function(sp) sp$species)), tree$tip.label))]
+
 ```
 
-Also a quote using `>`:
+
+
+## Setting up the MCMC:Choose Your Priors
+
+Now that we have our dataset we can start the exciting task of setting our priors, we will inform our parameters with informative/weakly informative priors (entirely uninformative uniform priors can lead to some weird behavior especially for niche breadth and mvBM pars)
+
+For our dataset (and any other using pseudo absence data generated from background points or some other unbalanced sampling that doesnt reflect true prevalence) I would recommend only estimating optimum and breadth from the mvBM model, and leave tolerance to only be estimated from the data
+
+```{r}
+
+
+
+unif=F
+norm=T
+preds=2
+pred=2
+
+unipred=F
+test_BM=F
+
+#specifiy predictor that needs to be fixed, or set to FALSE, and set center to what you want it fixed to, if for sal precip, er the better likely
+center_fixed=F
+
+v=c(.05, .05)
+k=lapply(1:length(v), function(x) log(v[[x]]/(1-v[[x]])))
+
+
+#
+#identify the range you expect breadth to be in, if 
+max_bd<-1.5
+
+min_bd<-.1
+
+bd <-((log(max_bd)-log(min_bd))/4)^2
+
+#get number of environmental predictors
+
+pred=length(data_final$Stereochilus_marginatus[3:length(data_final[[1]])])
+
+#set means for prior distributions for mvBM rates
+par.sd.lnorm.meanlog<-list(c(log(.2),  log(bd)) #pred 1 (center, width)
+                           ,c(log(.2), log(bd)) #pred 2
+)
+
+
+#set sd for prior distributions for mvBM rates
+
+par.sd.lnorm.sdlog<-list(c(.1, .1) #pred 1
+                         ,c(.1, .1) #pred 2
+)
+
+
+#compile sd and means into single objects
+
+par.sd.lnorm <-lapply(1:pred, function(x) cbind(par.sd.lnorm.meanlog[[x]], par.sd.lnorm.sdlog[[x]]))
+
+par.sd.lnorm <-lapply(1:pred, function(x) cbind(par.sd.lnorm.meanlog[[x]], par.sd.lnorm.sdlog[[x]]))
+
+
+
+#set pars for prior distributions of mvBM root means
+
+par.mu.norm<-list( matrix(c(  0,  .5, #center(norm)
+                       log(0.3), .2), #width (lnorm)
+                        nrow = 2, ncol = 2, byrow = TRUE), #pred 1 root prior (center mean, center sd, width mean, width sd)
+                  matrix(c(0, .5,
+                    log(0.3), .2),
+                    nrow = 2, ncol = 2, byrow = TRUE) #pred 2 root prior (center mean, center sd, width mean, width sd)
+)
+
+
+```
+
+
+Since tolerance are not part of the mvBM in the analysis and only estimated from the glm we will put priors on each tip. with the mean being a max likelihood estimate for tolerance Note what we are doing here is a little janky/circular as we are using max likelihood GLM(NOTE) estimates as the means, this is just a weak prior to place it somewhere between .05 and .99. You could use a flat prior but it will result in EPhyNE taking much longer to mix.  
+
+
+we do not believe this actually reflect prevalence, but instead error in sampling of the occurrences (broad scale gbif data) and generated absence data (using target group absences filtered to an equal number within the species IUCN expert range map and double the number of presences outside the expert range), see the pre print for details
+
+
+(NOTE) Generalized linear model: just the function we are fitting for each individual species response curve in PhyNE (logit(y) = B0 + B1 * X1 + B2 * X2)
+
+```{r}
+
+#warning the GLM from this simple one predictor model is going to be messy (lot of "Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred") we dont expect the estimate to be accurate we just are trying to get a rough guess of where tolerance may be, and starting values for our individual species response curves
+
+GLM_only_ml<-suppressWarnings(MLglmStartpars(species_data = data_final,tree = tree, height = NULL))
+
+
+heights_glm<- lapply(GLM_only_ml$start_pars_bt, function(pred) pred[,3])
+
+
+      
+```
+
+Now we have all the pieces needed to construct our Prior functions, these are what will be passed through EPhyNE's MCMC to calculate the prior likelihood our parameters 
+
+```{r}
+
+Prior_scale <-lapply(1:pred, function(x) makePrior_ENE(r = 2, p=1, #p is the number of regimes, currently EPhyNE is only capable of modeling one, but stay tuned!
+                                                       den.mu = "norm",  
+                                                       heights_by_sp = heights_glm[[x]], 
+                                                       par.mu = par.mu.norm[[x]], 
+                                                       den.sd = "lnorm" , 
+                                                       par.sd = par.sd.lnorm[[x]], 
+                                                       plot=F))
+
+
+
+```
+
+
+
+
+## Setting up the MCMC:Choose Your Starting Values
+
+To get start values we simulate parameters of our model, including individual species response curves and mvBM pars, however because we only can set what the mvBM pars are and the tip responses are subsequently simulated, we dont have a lot of control over what the tip values will be and some potential starting values could be so far off they 
+
+```{r}
+# chose one of two options: 
+
+heights_glm[[2]][[5]]=.9
+
+# Simulate mvBM and starting individual species responses
+repeat{
+
+  startPars_scaled <- priorSim_pars(Prior_scale, tree, dist="norm",hard_coded_heights = heights_glm) 
+  
+  #break when no tip has a -inf likelihood
+  
+  if(length(findBadStart(res=startPars_scaled$sim_dat$sim_dat_bt, pa_data=data_final, plot=F))==0){break}
+
+
+}
+
+
+findBadStart(res=startPars_scaled$sim_dat$sim_dat_bt, pa_data=data_final, plot=F)
+
+
+
+# Simulate mvBM and use GLM estimates as starting individual species responses
+
+#startPars_scaled$sim_dat$sim_dat_bt<- GLM_only_ml$start_pars_bt
+#
+#findBadStart(res=startPars_scaled$sim_dat$sim_dat_bt, pa_data=data_final, plot=F)
+#  
+#
+#start_good<-findStart(res=startPars_scaled$sim_dat$sim_dat_bt, pa_data=data_final, tree, plot=F)
+
+
+```
+
+
+## Setting up the MCMC:Choose Your Tuning Parameters
+
+Next you need to set your tuning parameters, how often do we want to be making proposals on any specific parameter, we set these through trial and error on our scaled predictors, each tip response par and mvBM par has its own tuning par in this setup, each response curve proposal type (center_lide, center_mult, width_slide, etc) has its own tuning par 
+
+
+```{r}
+
+    center_slide=.18
+    center_mult=.12
+    width_slide=.15
+    width_mult=.2
+    height_slide=.5
+    height_mult=.3
+
+    tuning<-  list(
+      niche_prop= lapply(1:pred, function(pred) list(slide=tibble(center=sample(center_slide, length(tree$tip.label), replace=T),   
+                                                                  width= sample(width_slide, length(tree$tip.label), replace=T), 
+                                                                  height= sample(height_slide, length(tree$tip.label), replace=T) ),
+                                                      multi=tibble(center=sample(center_mult , length(tree$tip.label), replace=T),   
+                                                                   width= sample(width_mult , length(tree$tip.label), replace=T), 
+                                                                   height= sample(height_mult, length(tree$tip.label), replace=T)  )
+      )),
+
+      w_mu =  lapply(1:pred, function(pred) list(slide=c(.6,.6),
+                                                  multi=c(.6,.6)))
+      ,
+
+      w_sd =  lapply(1:pred, function(pred)  list(slide=c(.15,.12),
+                                                   multi=c(.15,.12))
+      ),
+
+      v_cor       = lapply(1:pred, function(pred) 100)
+    )
+
+
+
+
+```
+
+
+
+
+
+##Run Your MCMC (Fingers Crossed)
+```{r}
+#  
+sets_full<-suppressWarnings(separate.data(data_final,ratio = .5))
+
+
+  sparse_sp=F
+  iterations=10000
+  trim_freq= 10
+  burnin=0
+  chain_end=(iterations-(burnin))/trim_freq
+  plot=F
+  plot_freq=iterations/5
+  
+  v=c(.05, .05)
+  k=lapply(1:length(v), function(x) log(v[[x]]/(1-v[[x]])))
+
+
+
+  moves_wieghts=c("height" =2,
+                  "center" =3,
+                  "width"  =3,
+                  "theta"  =1,
+                  "R_corr" =1,
+                  "R_sd"   =1)
+
+  move_prob=c("height"  = moves_wieghts[[1]]/sum(moves_wieghts),
+              "center" = moves_wieghts[[2]]/sum(moves_wieghts),
+              "width"  = moves_wieghts[[3]]/sum(moves_wieghts),
+              "theta"  = moves_wieghts[[4]]/sum(moves_wieghts),
+              "R_corr" = moves_wieghts[[5]]/sum(moves_wieghts),
+              "R_sd"   = moves_wieghts[[6]]/sum(moves_wieghts))
+
+
+
+
+```
+
+
+```{r, eval=F}
+
+
+
+
+  results<- metro_haste_full_MV(      R_corr_start   = startPars_scaled$R$R_cor
+                                    , R_sd_start   = startPars_scaled$R$R_sd
+                                    , A_start      = startPars_scaled$A$A_bt
+                                    , Prior= Prior_scale
+                                    , tree = tree
+                                    , tibble_data = startPars_scaled$sim_dat$sim_td_bt
+                                    , pa_data=sets_full$training
+                                    , iterations=iterations
+                                    , burnin=burnin
+                                    , move_prob=move_prob
+                                    , n=2
+                                    , print.i.freq=1000
+                                    , print.ac.freq=100
+                                    , printing=TRUE
+                                    , trim=T
+                                    , trim_freq=trim_freq
+                                    , H_fixed=F
+                                    , tuning=tuning
+                                    , center_fixed=center_fixed
+                                    , write_file=F
+                                    , IDlen=5
+                                    , dir=NA
+                                    , outname=NA
+                                    , prior_only= F
+                                    , glm_only  = F
+                                    , plot=F
+                                    , plot_freq=iterations/5
+                                    , plot_file= NA
+                                    , True_pars = NA
+                                    , k=k
+  )
+
+
+
+
+
+
+```
+
+
+
+To those trying to use their own data, if it didn't break down partway through you probably have a working run! Lets trying to visualize our results
+
+
+
+
+
+
+
+
+
 
 > "He who gives up [code] safety for [code] speed deserves neither."
 ([via](https://twitter.com/hadleywickham/status/504368538874703872))

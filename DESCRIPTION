@@ -9,3 +9,34 @@ Description: More about what it does (maybe more than one line)
 License: What license is it under?
 Encoding: UTF-8
 LazyData: true
+Imports:
+		readr,
+		tibble,
+		MCMCpack,
+		devtools,
+		coda,
+		devtools,
+		coda,
+		ape,
+		truncdist,
+		geiger,
+		phytools,
+		tidyr,
+		ratematrix,
+		mvMORPH,
+		dplyr,
+		mvtnorm,
+		MultiRNG,
+		Rphylopars,
+		Rcpp,
+		doParallel,
+		corpcor,
+		Matrix,
+		treeplyr,
+		bayou,
+		crayon,
+		shape,
+		scales,
+		phytools,
+		robustbase
+VignetteBuilder: knitr
