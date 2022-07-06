@@ -5115,7 +5115,7 @@ require(robustbase)
 
 
 
-  EPhyNE_out2coda_mcmc<- function(mcmc_output, tree){
+  BePhyNE_out2coda_mcmc<- function(mcmc_output, tree){
     #iterates through all predictors and saves chains as coda mcmc objects that are easy to plot
 
 
@@ -6124,7 +6124,7 @@ require(robustbase)
 
 
 
-  PlotEPhyNEchains<-function(mcmc_object, dir=NA, name="EPhyNE", traces=T, densities=T){
+  PlotBePhyNEchains<-function(mcmc_object, dir=NA, name="BePhyNE", traces=T, densities=T){
 
 
     if(is.na(dir)==T){
