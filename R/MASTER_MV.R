@@ -5114,6 +5114,116 @@ require(robustbase)
 
 
 
+
+  EPhyNE_out2coda_mcmc<- function(mcmc_output, tree){
+    #iterates through all predictors and saves chains as coda mcmc objects that are easy to plot
+
+
+
+    mcmc_object<-list()
+    mcmc_object$tip_curves<-list()
+    mcmc_object$A<-list()
+    mcmc_object$R_sd<-list()
+    mcmc_object$R_cor<-list()
+
+
+
+    nenvir_pred<-length(mcmc_output$chain[[1]][[1]])
+
+
+    for(pred in 1: nenvir_pred){
+
+      #response curve mcmc chains
+
+      tmp <- lapply(1:length(mcmc_output$chain), function(x) t(apply(mcmc_output$chain[[x]][[1]][[pred]]$dat,1,backTransform1)))
+
+      tmp2 <-  do.call(rbind, lapply(tmp, function(x) unlist(data.frame(x))))
+      mymcmc_1 <- mcmc(tmp2[,1:length(tree$tip.label)])
+      mymcmc_2 <-mcmc(tmp2[,(length(tree$tip.label)+1):(2*length(tree$tip.label))])
+      mymcmc_3 <-try(mcmc(tmp2[,(2*length(tree$tip.label)+1):(3*length(tree$tip.label))]),silent = T)
+      mcmc_object$tip_curves[[pred]]<-list(optimum=mymcmc_1, breadth=mymcmc_2, tolerance=mymcmc_3)
+
+
+      # mvBM root means
+
+      tmp <-  lapply( 1:length(mcmc_output$chain),  function(x) backTransform1((mcmc_output$chain[[x]][[1]][[pred]]$A)))
+      A_1 <-  do.call(rbind, lapply(tmp, function(x) unlist(data.frame(x[[1]]))))
+      A_2 <-  do.call(rbind, lapply(tmp, function(x) unlist(data.frame(x[[2]]))))
+      A_3 <-  try(do.call(rbind, lapply(tmp, function(x) unlist(data.frame(x[[3]])))),silent = T)
+      mymcmc_A_1<-mcmc(A_1)
+      mymcmc_A_2<-mcmc(A_2)
+      mymcmc_A_3<-try(mcmc(A_3),silent = T)
+      mcmc_object$A[[pred]]<-list(optimum=mymcmc_A_1, breadth=mymcmc_A_2, tolerance=mymcmc_A_3)
+
+
+
+
+      # mvBM rates
+      tmp <-  lapply( 1:length(mcmc_output$chain),  function(x) mcmc_output$chain[[x]][[1]][[pred]]$R_sd)
+      sd_1 <-  do.call(rbind, lapply(tmp, function(x) unlist(data.frame(x[[1]]))))
+      sd_2 <-  do.call(rbind, lapply(tmp, function(x) unlist(data.frame(x[[2]]))))
+      sd_3 <-  try(do.call(rbind, lapply(tmp, function(x) unlist(data.frame(x[[3]])))),silent = T)
+      mymcmc_sd_1<-mcmc(sd_1)
+      mymcmc_sd_2<-mcmc(sd_2)
+      mymcmc_sd_3<-try(mcmc(sd_3),silent = T)
+      mcmc_object$R_sd[[pred]]<-list(optimum=mymcmc_sd_1, breadth=mymcmc_sd_2, tolerance=mymcmc_sd_3 )
+
+
+
+      # mvBM Correlation matrix
+
+
+      tmp <-  lapply( 1:length(mcmc_output$chain),  function(x)(mcmc_output$chain[[x]][[1]][[pred]]$R_cor))
+      tmp_1_2<-lapply(tmp, function(x) x[[1,2]])
+      tmp_1_3<-try(lapply(tmp, function(x) x[[1,3]]),silent = T)
+      tmp_2_3<-try(lapply(tmp, function(x) x[[2,3]]),silent = T)
+      cor_1_2 <-  do.call(rbind, lapply(tmp_1_2, function(x) unlist(data.frame(x))))
+      cor_1_3 <-  try(do.call(rbind, lapply(tmp_1_3, function(x) unlist(data.frame(x)))),silent = T)
+      cor_2_3 <-  try(do.call(rbind, lapply(tmp_2_3, function(x) unlist(data.frame(x)))),silent = T)
+      mymcmc_1_2<-mcmc(cor_1_2)
+      mymcmc_1_3<-try(mcmc(cor_1_3),silent = T)
+      mymcmc_2_3<-try(mcmc(cor_2_3),silent = T)
+
+      mcmc_object$R_cor[[pred]]<-list(opt.bre=mymcmc_1_2, opt.tol=  mymcmc_1_3, br_tol=mymcmc_2_3)
+
+    }
+
+
+    names(mcmc_object$tip_curves)<- unlist(lapply(1:nenvir_pred, function(pred) paste("pred", pred, sep="_")))
+    names(mcmc_object$A)<- lapply(1:nenvir_pred, function(pred) paste("pred", pred, sep="_"))
+    names(mcmc_object$R_sd)<- lapply(1:nenvir_pred, function(pred) paste("pred", pred, sep="_"))
+    names(mcmc_object$R_cor)<- lapply(1:nenvir_pred, function(pred) paste("pred", pred, sep="_"))
+
+    return(mcmc_object)
+  }
+
+
+
+
+
+
+  HPD_list<-function(mcmc_object, tree, prob=0.95){
+
+    #creates list of HPDs each list entry is named after the specific parameter the HPD describes
+
+    hpd_list<-lapply(unlist(unlist(mcmc_lt, recursive = F), recursive = F), function(c) try(HPDinterval(c, args=list(prob=prob)),silent = T))
+
+
+    for(df in grep("tip_curves",x = names(hpd_list))){
+
+      rownames(hpd_list[[df]])<-tree$tip.label
+
+    }
+
+    hpd_list_final<-hpd_list[!lapply(hpd_list,class)=="try-error"]
+
+    return(hpd_list_final)
+
+  }
+
+
+
+
   ##Predict#######################################################################################################################################################################################################################
 
   ##predict and cross validation functions
@@ -6005,6 +6115,236 @@ require(robustbase)
 
       plot( unlist((lapply(1:length(trimmed_chain), function(y)  backTransform1(trimmed_chain[[y]][[1]][[1]]$A)[2]))), type="b", cex=.5,  main="A_width_2", xlab="iteration", ylab="width_A"  )
       plot( density(unlist((lapply(1:length(trimmed_chain), function(y)  backTransform1(trimmed_chain[[y]][[1]][[1]]$A)[2]))) ), type="b", cex=.5,  main="A_width_2 dens", xlab="A_width_2", ylab="dens"  )
+
+
+    }
+
+  }
+
+
+
+
+  PlotEPhyNEchains<-function(mcmc_object, dir=NA, name="EPhyNE", traces=T, densities=T){
+
+
+    if(is.na(dir)==T){
+
+      dir= paste(getwd(),"/", sep="")
+    }
+
+    nenvir_pred<-length(mcmc_object$tip_curves)
+
+    ####traces
+    if(traces==T){
+
+
+      #response curve traits
+
+      {
+        pdf(file= paste(dir, name,"curve_traces.pdf",sep="_"))
+
+        par(mfrow = c(3, 2), oma=c(0,0,2,0))
+
+
+        for(x in 1:length(tree$tip.label)){
+
+          for(i in 1:nenvir_pred){
+
+            traceplot( mcmc_object$tip_curves[[i]]$optimum[,x], ask=F, main=paste("optimum", i ) )
+
+            traceplot( mcmc_object$tip_curves[[i]]$breadth[,x], ask=F, main=paste("breadth", i ) )
+
+            traceplot( mcmc_object$tip_curves[[i]]$tolerance[,x], ask=F, main=paste("tolerance", i ) )
+
+
+          }
+          title( tree$tip.label[[x]] ,outer = T)
+
+        }
+
+
+
+
+
+        dev.off()
+      }
+
+      #A traces
+
+      {
+
+        pdf(file= paste(dir, name,"A_traces.pdf", sep="_"))
+
+
+        for(i in 1:nenvir_pred){
+          par(mfrow = c(3, 2))
+
+
+          traceplot( mcmc_object$A[[i]]$optimum, ask=F, main=paste("optimum", i ) )
+
+          traceplot( mcmc_object$A[[i]]$breadth, ask=F, main=paste("breadth", i ) )
+
+          #try(traceplot( mcmc_object$A[[i]]$tolerance, ask=F, main=paste("tolerance", i ) ), silent = T)
+
+
+
+        }
+
+        dev.off()
+      }
+
+      #R_sd rtraces
+      {
+
+        pdf(file= paste(dir, name,"R_sd_traces.pdf", sep="_"))
+
+
+        for(i in 1:nenvir_pred){
+          par(mfrow = c(3, 2))
+
+
+          traceplot( mcmc_object$R_sd[[i]]$optimum, ask=F, main=paste("optimum", i ) )
+
+          traceplot( mcmc_object$R_sd[[i]]$breadth, ask=F, main=paste("breadth", i ) )
+
+          #try(traceplot( mcmc_object$R_sd[[i]]$tolerance, ask=F, main=paste("tolerance", i ) ), silent = T)
+
+
+
+        }
+
+        dev.off()
+      }
+
+      ##R correlations traces
+
+      {
+
+        pdf(file= paste(dir, name,"R_cor_traces.pdf", sep="_"))
+
+
+        for(i in 1:nenvir_pred){
+          par(mfrow = c(3, 2))
+
+
+          traceplot( mcmc_object$R_cor[[i]]$opt.bre, ask=F, main=paste("optimum and breadth", i ) )
+
+          # try(traceplot( mcmc_object$R_cor[[i]]$opt.tol, ask=F, main=paste("optimum and tolerance", i ) ), silent = T)
+
+          #try(traceplot( mcmc_object$R_cor[[i]]$br_tol, ask=F, main=paste("breadth and tolerance", i ) ), silent = T)
+
+
+
+        }
+
+        dev.off()
+      }
+
+
+
+
+      ####end traces
+    }
+
+
+
+    ######densities
+
+    if(densities==T){
+
+      {
+        pdf(file= paste(dir, name,"curve_dens.pdf", sep="_"))
+
+        for(x in 1:length(tree$tip.label)){
+
+
+          for(i in 1:nenvir_pred){
+            par(mfrow = c(2, 2))
+            densplot( mcmc_object$tip_curves[[i]]$optimum[,x], ask=F, main=paste("optimum", i ) )
+
+            densplot( mcmc_object$tip_curves[[i]]$breadth[,x], ask=F, main=paste("breadth", i ) )
+
+            densplot( mcmc_object$tip_curves[[i]]$tolerance[,x], ask=F, main=paste("tolerance", i ) )
+
+            title( tree$tip.label[[x]] )
+
+          }
+
+          title( tree$tip.label[[x]] ,outer = T)
+
+
+        }
+        dev.off()
+      }
+
+      {
+
+        pdf(file= paste(dir, name,"A_dens.pdf", sep="_"))
+
+
+        for(i in 1:nenvir_pred){
+          par(mfrow = c(3, 2))
+          densplot( mcmc_object$A[[i]]$optimum, ask=F, main=paste("optimum", i ) )
+
+          densplot( mcmc_object$A[[i]]$breadth, ask=F, main=paste("breadth", i ) )
+
+          #try(densplot( mcmc_object$A[[i]]$tolerance, ask=F, main=paste("tolerance", i ) ), silent = T)
+
+
+        }
+
+        dev.off()
+      }
+
+      #R_sd rtraces
+      {
+
+        pdf(file= paste(dir, name,"R_sd_dens.pdf", sep="_"))
+
+
+        for(i in 1:nenvir_pred){
+          par(mfrow = c(3, 2))
+
+
+          densplot( mcmc_object$R_sd[[i]]$optimum, ask=F, main=paste("optimum", i ) )
+
+          densplot( mcmc_object$R_sd[[i]]$breadth, ask=F, main=paste("breadth", i ) )
+
+          #try(densplot( mcmc_object$R_sd[[i]]$tolerance, ask=F, main=paste("tolerance", i ) ), silent = T)
+
+
+
+        }
+
+        dev.off()
+      }
+
+      ##R correlations traces
+
+      {
+
+        pdf(file= paste(dir, name,"R_cor_dens.pdf", sep="_"))
+
+
+        for(i in 1:nenvir_pred){
+          par(mfrow = c(3, 2))
+
+
+          densplot( mcmc_object$R_cor[[i]]$opt.bre, ask=F, main=paste("optimum and breadth", i ) )
+
+          #try(densplot( mcmc_object$R_cor[[i]]$opt.tol, ask=F, main=paste("optimum and tolerance", i ) ), silent = T)
+
+          #try(densplot( mcmc_object$R_cor[[i]]$br_tol, ask=F, main=paste("breadth and tolerance", i ) ), silent = T)
+
+
+
+        }
+
+        dev.off()
+
+
+      }
+
 
 
     }
