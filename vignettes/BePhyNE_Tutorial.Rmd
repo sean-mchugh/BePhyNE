@@ -41,10 +41,20 @@ lets install the package and load in load in the example file which contains Pre
 
 ```{r,results= "hide"}
 
-#devtools::install()
-library(BePhyNE)
-library(treeplyr)
 
+
+library(devtools)
+
+
+devtools::install_github("sean-mchugh/BePhyNE")
+
+
+library(BePhyNE)
+
+#other packages
+
+
+library(treeplyr)
 require(readr)
 require(tibble)
 require(MCMCpack)
