@@ -26,34 +26,16 @@ NOTE: all environmental predictor response curves are currently set as uncorrela
 Covariation in these predictors is very interesting and important next step in improving this models and other similar ones.
 
 
-## Getting started: Data Format
+#Getting Start: Get the Package
 
-To run BePhyNE you need a dataframe loaded in from a file format such as a ".csv" (can be loaded in from an excel spreadsheet saved as a.csv file usually) with a specific column order start at leftmost: 
--   latitude in degrees
--   longitutde in degree
--   species name (this must be the same exact name as the corresponding tip label in your phylogeny), 
--   P/A value (either a 1 for presence or 0 for absence), 
--   Environmental predictors (one per row)
+lets install the package and 
 
-This on the back end get formatted as a list of lists were each list includes the species name, the vector of P/A, and vectors for the corresponding environmental predictor values.
-
-lets install the package and load in load in the example file which contains Presence absence data for 98 species of Plethodontid salamanders from Eastern North America (ENA_Pleth in a lot of the code) we have two macroclimate predictors from worldclim: average annual precipitation (mm) and average annual temperature (degrees Celsisus)
-
-```{r,results= "hide"}
-
-
-
+```{r, echo=T, message=F,warnings=F,results= "hide"}
 library(devtools)
-
-
 devtools::install_github("sean-mchugh/BePhyNE")
-
-
 library(BePhyNE)
 
 #other packages
-
-
 library(treeplyr)
 require(readr)
 require(tibble)
@@ -78,13 +60,30 @@ require(doParallel)
 require(corpcor)
 require(Matrix)
 require(treeplyr)
-require(bayou)
+#require(bayou)
 require(crayon)
 require(shape)
 require(scales)
 require(phytools)
 require(robustbase)
 
+
+```
+
+## Getting started: Data Format
+
+To run BePhyNE you need a dataframe loaded in from a file format such as a ".csv" (can be loaded in from an excel spreadsheet saved as a.csv file usually) with a specific column order start at leftmost: 
+-   latitude in degrees
+-   longitutde in degree
+-   species name (this must be the same exact name as the corresponding tip label in your phylogeny), 
+-   P/A value (either a 1 for presence or 0 for absence), 
+-   Environmental predictors (one per row)
+
+This on the back end gets formatted as a list of lists, were each list includes the species name, the vector of P/A, and vectors for the corresponding environmental predictor values.
+
+Lets in load in the example file which contains Presence absence data for 98 species of Plethodontid salamanders from Eastern North America (ENA_Pleth in a lot of the code) we have two macroclimate predictors from worldclim: average annual precipitation (mm) and average annual temperature (degrees Celsisus)
+
+```{r}
 data(ENA_Pleth_PA)
 
 #loading in the data had an issue needed to convert rows back to numeric (except species of course)
@@ -94,7 +93,6 @@ ENA_Pleth_PA[,c(1:2,4:6)]<-do.call(cbind,lapply(X = ENA_Pleth_PA[,c(1:2,4:6)], F
 data(ENA_Pleth_Tree)
 
 tree<-ENA_Pleth_Tree
-
 ```
 
 Cool, lets look at some of the details of our dataset, first printing some of the first rows to get a sense of the schema, then checking the number of datapoints by checking how many rows we have. Then the number of unique species. 
@@ -126,8 +124,6 @@ We can plot our data both spatially and over climate space chose a species and p
 #class(ENA_Pleth_PA)
 sp<-species$Aneides_aeneus
 
-
-
 #plot occurrence data for species in Envrionmental space ("E-space")
 plot(c(min(ENA_Pleth_PA$X1),max(ENA_Pleth_PA$X1)),
      c(max(ENA_Pleth_PA$X2),min(ENA_Pleth_PA$X2)), xlab="precip",ylab="temp",main=paste(sp, "E-space"), col=4)
@@ -136,26 +132,22 @@ points(ENA_Pleth_PA[ ( ENA_Pleth_PA$species==sp & ENA_Pleth_PA$y==0 ) ,5:6], col
     
 points(ENA_Pleth_PA[ ( ENA_Pleth_PA$species==sp & ENA_Pleth_PA$y==1 ) ,5:6], col=2)
 
-
 #plot occurrence data for species in Geographic space space ("G-space")
 plot(c(min(ENA_Pleth_PA$Lat),max(ENA_Pleth_PA$Lat)),
      c(max(ENA_Pleth_PA$Lon),min(ENA_Pleth_PA$Lon)), xlab="Lat",ylab="Lon",main=paste(sp, "G-space"), col=4)
 
-
 points(ENA_Pleth_PA[ ( ENA_Pleth_PA$species==sp & ENA_Pleth_PA$y==0 ) ,1:2], col=1)
     
 points(ENA_Pleth_PA[ ( ENA_Pleth_PA$species==sp & ENA_Pleth_PA$y==1 ) ,1:2], col=2)
-
-
 ```
 
-So we have a dataset, now it is time to put it into a form BePhyNE can read, and then start setting up the details for our MCMC run. BePhyNE reads a list of lists of your PA dtaa and occurrences over each species such that for one species (the way ENA_Pleth_PA is converted to data_final makes column order essential) (NOTE: Lat and Lon are removed at this stage)
-data_final[[1]]
-       $speciesname
-       $ vector of y (1's and 0's for presences and absences)
-       $ vector X1
-       $ vector X2
-       $ vector Xetx
+So we have a dataset, now it is time to put it into a form BePhyNE can read, and then start setting up the details for our MCMC run. BePhyNE reads a list of lists of your PA dtaa and occurrences over each species such that for one species (the way ENA_Pleth_PA is converted to data_final makes column order essential) (NOTE: Lat and Lon are removed at this stage) \n
+data_final[[1]] \n
+       $speciesname \n
+       $ vector of y (1's and 0's for presences and absences) \n
+       $ vector X1 \n
+       $ vector X2 \n
+       $ vector Xetx \n
 
 
 
@@ -168,8 +160,6 @@ for (sp in 1:length(data_final)) {
   data_final[[sp]]$species= data_final[[sp]]$species[[1]]
   
 }
-
-
 
 # match data_final species order to tree tip order 
 data_final=data_final[order(match(unlist(lapply(data_final, function(sp) sp$species)), tree$tip.label))]
@@ -185,17 +175,6 @@ Now that we have our dataset we can start the exciting task of setting our prior
 For our dataset (and any other using pseudo absence data generated from background points or some other unbalanced sampling that doesnt reflect true prevalence) I would recommend only estimating optimum and breadth from the mvBM model, and leave tolerance to only be estimated from the data
 
 ```{r}
-
-
-
-unif=F
-norm=T
-preds=2
-pred=2
-
-unipred=F
-test_BM=F
-
 #specifiy predictor that needs to be fixed, or set to FALSE, and set center to what you want it fixed to, if for sal precip, er the better likely
 center_fixed=F
 
@@ -259,16 +238,11 @@ we do not believe this actually reflect prevalence, but instead error in samplin
 (NOTE) Generalized linear model: just the function we are fitting for each individual species response curve in PhyNE (logit(y) = B0 + B1 * X1 + B2 * X2)
 
 ```{r}
-
 #warning the GLM from this simple one predictor model is going to be messy (lot of "Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred") we dont expect the estimate to be accurate we just are trying to get a rough guess of where tolerance may be, and starting values for our individual species response curves
 
 GLM_only_ml<-suppressWarnings(MLglmStartpars(species_data = data_final,tree = tree, height = NULL))
 
-
 heights_glm<- lapply(GLM_only_ml$start_pars_bt, function(pred) pred[,3])
-
-
-      
 ```
 
 Now we have all the pieces needed to construct our Prior functions, these are what will be passed through BePhyNE's MCMC to calculate the prior likelihood our parameters 
@@ -282,9 +256,6 @@ Prior_scale <-lapply(1:pred, function(x) makePrior_ENE(r = 2, p=1, #p is the num
                                                        den.sd = "lnorm" , 
                                                        par.sd = par.sd.lnorm[[x]], 
                                                        plot=F))
-
-
-
 ```
 
 
@@ -295,10 +266,6 @@ Prior_scale <-lapply(1:pred, function(x) makePrior_ENE(r = 2, p=1, #p is the num
 To get start values we simulate parameters of our model, including individual species response curves and mvBM pars, however because we only can set what the mvBM pars are and the tip responses are subsequently simulated, we dont have a lot of control over what the tip values will be and some potential starting values could be so far off they 
 
 ```{r}
-# chose one of two options: 
-
-heights_glm[[2]][[5]]=.9
-
 # Simulate mvBM and starting individual species responses
 repeat{
 
@@ -315,17 +282,6 @@ repeat{
 findBadStart(res=startPars_scaled$sim_dat$sim_dat_bt, pa_data=data_final, plot=F)
 
 
-
-# Simulate mvBM and use GLM estimates as starting individual species responses
-
-#startPars_scaled$sim_dat$sim_dat_bt<- GLM_only_ml$start_pars_bt
-#
-#findBadStart(res=startPars_scaled$sim_dat$sim_dat_bt, pa_data=data_final, plot=F)
-#  
-#
-#start_good<-findStart(res=startPars_scaled$sim_dat$sim_dat_bt, pa_data=data_final, tree, plot=F)
-
-
 ```
 
 
@@ -336,6 +292,7 @@ Next you need to set your tuning parameters, how often do we want to be making p
 
 ```{r}
 
+#set base tuning pars for each parameter type
     center_slide=.18
     center_mult=.12
     width_slide=.15
@@ -351,15 +308,12 @@ Next you need to set your tuning parameters, how often do we want to be making p
                                                                    width= sample(width_mult , length(tree$tip.label), replace=T), 
                                                                    height= sample(height_mult, length(tree$tip.label), replace=T)  )
       )),
-
       w_mu =  lapply(1:pred, function(pred) list(slide=c(.6,.6),
                                                   multi=c(.6,.6)))
       ,
-
       w_sd =  lapply(1:pred, function(pred)  list(slide=c(.15,.12),
                                                    multi=c(.15,.12))
       ),
-
       v_cor       = lapply(1:pred, function(pred) 100)
     )
 
@@ -376,8 +330,6 @@ Next you need to set your tuning parameters, how often do we want to be making p
 ```{r}
 #  
 sets_full<-suppressWarnings(separate.data(data_final,ratio = .5))
-
-
   sparse_sp=F
   iterations=1000
   trim_freq= 10
@@ -385,11 +337,8 @@ sets_full<-suppressWarnings(separate.data(data_final,ratio = .5))
   chain_end=(iterations-(burnin))/trim_freq
   plot=F
   plot_freq=iterations/5
-  
   v=c(.05, .05)
   k=lapply(1:length(v), function(x) log(v[[x]]/(1-v[[x]])))
-
-
 
   moves_wieghts=c("height" =2,
                   "center" =3,
@@ -404,18 +353,10 @@ sets_full<-suppressWarnings(separate.data(data_final,ratio = .5))
               "theta"  = moves_wieghts[[4]]/sum(moves_wieghts),
               "R_corr" = moves_wieghts[[5]]/sum(moves_wieghts),
               "R_sd"   = moves_wieghts[[6]]/sum(moves_wieghts))
-
-
-
-
 ```
 
 
 ```{r,message=FALSE, warning=F, results= "hide" }
-
-
-
-
   results<- metro_haste_full_MV(      R_corr_start   = startPars_scaled$R$R_cor
                                     , R_sd_start   = startPars_scaled$R$R_sd
                                     , A_start      = startPars_scaled$A$A_bt
@@ -447,12 +388,6 @@ sets_full<-suppressWarnings(separate.data(data_final,ratio = .5))
                                     , True_pars = NA
                                     , k=k
   )
-
-
-
-
-
-
 ```
 
 
@@ -512,8 +447,7 @@ HPDs<-HPD_list(mcmc_lt,tree, prob=0.95)
 ````
 
 
-lets plot some MCMC chains, we can either do that directly for specific parameters using traceplot and dense plot, or plotting all of them using PlotBePhyNEchains()
-fn, which will return a set of files with the chains and/or densities for each parameter either to your work directory or a specified directory, writing these plots to files is usually the best move as there are a lot of parameters (species responses AND mvBM poars....thats a lot)
+lets plot some MCMC chains, we can either do that directly for specific parameters using traceplot and dense plot, or plotting all of them using PlotBePhyNEchains() fn, which will return a set of files with the chains and/or densities for each parameter either to your work directory or a specified directory, writing these plots to files is usually the best move as there are a lot of parameters (species responses AND mvBM parameters....thats a lot of plotting)
 
 ```{r, fig.show='hold'}
 

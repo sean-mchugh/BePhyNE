@@ -21,7 +21,7 @@ require(doParallel)
 require(corpcor)
 require(Matrix)
 require(treeplyr)
-require(bayou)
+#require(bayou)
 require(crayon)
 require(shape)
 require(scales)
@@ -31,6 +31,16 @@ require(robustbase)
 
 
 {
+
+
+  makeTransparent<- function (someColor, alpha = 100)
+  {
+    newColor <- col2rgb(someColor)
+    apply(newColor, 2, function(curcoldata) {
+      rgb(red = curcoldata[1], green = curcoldata[2], blue = curcoldata[3],
+          alpha = alpha, maxColorValue = 255)
+    })
+  }
 
   ###transformations##################################################################################################################################################################
 
@@ -5240,7 +5250,7 @@ require(robustbase)
     for( sp in 1:length(data_final)){
 
 
-      if(is.na(data_final[[sp]]$y)==T){
+      if(is.na(data_final[[sp]]$y[[1]])==T){
 
         training_set[[sp]]<-data_final[[sp]]
         testing_set[[sp]] <-data_final[[sp]]
