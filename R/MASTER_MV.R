@@ -104,6 +104,8 @@ require(robustbase)
     newx[3] <- -1*log(Y/(1-Y))
     return(newx)
   }
+
+
   backTransform1 <- function(x){
     newx <- x
     newx[2] <- exp(x[2])
@@ -4265,26 +4267,26 @@ require(robustbase)
 
   ){
     #set params if line by line#####
-    for (w in 1){
+    {
 
-      i=1
-      tree_full<-tree
-      R_corr_start = startPars_scaled$R$R_cor
-      R_sd_start   = startPars_scaled$R$R_sd
-      A_start      = startPars_scaled$A$A_bt
-      Prior=Prior_scale
-      tree=tree
-      tibble_data = startPars_scaled$sim_dat$sim_td_bt
-      pa_data=sets_full$training
-
-
-      #assing tuning
-
-
-      d<-tuning$niche_prop
-      w_mu<-tuning$w_mu
-      w_sd<-tuning$w_sd
-      v_cor<-tuning$v_cor
+      #i=1
+      #tree_full<-tree
+      #R_corr_start = startPars_scaled$R$R_cor
+      #R_sd_start   = startPars_scaled$R$R_sd
+      #A_start      = startPars_scaled$A$A_bt
+      #Prior=Prior_scale
+      #tree=tree
+      #tibble_data = startPars_scaled$sim_dat$sim_td_bt
+      #pa_data=sets_full$training
+#
+#
+      ##assing tuning
+#
+#
+      #d<-tuning$niche_prop
+      #w_mu<-tuning$w_mu
+      #w_sd<-tuning$w_sd
+      #v_cor<-tuning$v_cor
 
 
 
