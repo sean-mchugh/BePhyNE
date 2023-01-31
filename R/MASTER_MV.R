@@ -4280,13 +4280,6 @@ require(robustbase)
       #pa_data=sets_full$training
 #
 #
-      ##assing tuning
-#
-#
-      #d<-tuning$niche_prop
-      #w_mu<-tuning$w_mu
-      #w_sd<-tuning$w_sd
-      #v_cor<-tuning$v_cor
 
 
 
@@ -4294,6 +4287,13 @@ require(robustbase)
 
       dat_ft=lapply(1:length(tibble_data), function(pred) t(apply(tibble_data[[pred]], 1, forwardTransform1)))
 
+      #assign tuning
+      #
+      #
+      d<-tuning$niche_prop
+      w_mu<-tuning$w_mu
+      w_sd<-tuning$w_sd
+      v_cor<-tuning$v_cor
 
       for(pred in 1:length(tibble_data)){
 
