@@ -31,15 +31,29 @@
 
 
 {
-######Utils#########
 
-  makeTransparent<- function (someColor, alpha = 100)
-  {
-    newColor <- col2rgb(someColor)
-    apply(newColor, 2, function(curcoldata) {
-      rgb(red = curcoldata[1], green = curcoldata[2], blue = curcoldata[3],
-          alpha = alpha, maxColorValue = 255)
-    })
+  ###Utils##################################################################################################################################################################
+
+  data_df2list=function(df, tree){
+
+    #```{r}
+    #
+    sp_col=(1:ncol(df))[names(df)=="species"]
+
+    data_final<- lapply(split(df[sp_col:ncol(df)],df$species), as.list)
+    #replace vector of species names with a single name
+    for (sp in 1:length(data_final)) {
+
+      data_final[[sp]]$species= data_final[[sp]]$species[[1]]
+
+    }
+
+    # match data_final species order to tree tip order
+    data_final=data_final[order(match(unlist(lapply(data_final, function(sp) sp$species)), tree$tip.label))]
+
+    #```
+
+    return(data_final)
   }
 
   make.treedata =function (tree, data, name_column = "detect", as.is = FALSE)
@@ -112,6 +126,15 @@
     return(td)
   }
 
+
+  makeTransparent<- function (someColor, alpha = 100)
+  {
+    newColor <- col2rgb(someColor)
+    apply(newColor, 2, function(curcoldata) {
+      rgb(red = curcoldata[1], green = curcoldata[2], blue = curcoldata[3],
+          alpha = alpha, maxColorValue = 255)
+    })
+  }
 
   ###transformations##################################################################################################################################################################
 
@@ -2768,8 +2791,8 @@
       #tree=tree
       #tibble_data = startPars_scaled$sim_dat$sim_td_bt
       #pa_data=sets_full$training
-#
-#
+      #
+      #
 
 
 
@@ -5360,4 +5383,3 @@
 
 
 }
-
