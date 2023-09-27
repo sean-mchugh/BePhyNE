@@ -753,11 +753,13 @@
   find_good_start_pars=function(Prior_object,dist="norm",  ntries=1000){
     rep=0
 
+    glm_heights=lapply(1:length(Prior_object), function(pred) Prior_object[[pred]]$pars$heights)
+
     repeat{
       print(rep)
       rep=rep+1
       #print
-      startPars_scaled <- priorSim_pars(Prior_object, tree, dist=Prior_object[[1]]$pars$den.mu,hard_coded_heights = lapply(1:length(Prior_object), function(pred) Prior_object[[pred]]$pars$heights))
+      startPars_scaled <- priorSim_pars(Prior_object, tree, dist=Prior_object[[1]]$pars$den.mu,hard_coded_heights = glm_heights )
       #startPars_scaled$sim_da$sim_dat_ft=GLM_only_ml$start_pars_ft
       #startPars_scaled$sim_da$sim_dat_bt=GLM_only_ml$start_pars_bt
       #startPars_scaled$sim_da$sim_td=GLM_only_ml$start_td
@@ -1851,7 +1853,8 @@
 
       Y=((heights_by_sp-.05)/.95)
       FT_heights<- -1*log(Y/(1-Y))
-      pars$heights=FT_heights
+      pars$FT_heights=FT_heights
+      pars$heights=heights_by_sp
 
       #height_priors=list()
       #making a list of functions rather than one big function so we can call the specific function we want only when the move on that par happens,
