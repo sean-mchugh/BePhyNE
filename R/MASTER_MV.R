@@ -34,7 +34,8 @@
 
   ###Utils##################################################################################################################################################################
 
-  data_df2list=function(df, tree){
+  data_df2list=function(df, tree)
+  {
 
     #```{r}
     #
@@ -749,6 +750,37 @@
     return(list(start_pars_bt=res_new, start_pars_ft=res_ft_new, start_td=res_td_new, start_td_bt=res_td_bt_new))
   }
 
+  find_good_start_pars=function(Prior_object,dist="norm",  ntries=1000){
+    rep=0
+
+    repeat{
+      print(rep)
+      rep=rep+1
+      #print
+      startPars_scaled <- priorSim_pars(Prior_object, tree, dist=Prior_object[[1]]$pars$den.mu,hard_coded_heights = lapply(1:length(Prior_object), function(pred) Prior_object[[pred]]$pars$heights))
+      #startPars_scaled$sim_da$sim_dat_ft=GLM_only_ml$start_pars_ft
+      #startPars_scaled$sim_da$sim_dat_bt=GLM_only_ml$start_pars_bt
+      #startPars_scaled$sim_da$sim_td=GLM_only_ml$start_td
+      #startPars_scaled$sim_da$sim_td_bt=GLM_only_ml$start_td_bt
+
+
+
+      #break when no tip has a -inf likelihood
+
+      if(length(findBadStart(res=startPars_scaled$sim_dat$sim_dat_bt, pa_data=data_final, plot=T))==0){
+        break
+        return(startPars_scaled)
+      }
+
+      if(rep>ntries){
+        break
+        return("could not find starting values in ntries")
+      }
+
+
+    }
+
+  }
 
   sim_df2listoflists_fn<-  function(sim_dat, tree, Multi_Pred=T, k){####
     #produces a list of lists of traits for each species
@@ -1646,6 +1678,7 @@
     pars$par.mu.c <- par.mu[1,]
     pars$par.mu.w <- par.mu[2,]
 
+
     if( nrow(par.mu)>2){
 
       par.mu.h <- par.mu[3,]
@@ -1814,21 +1847,15 @@
     }else{
 
 
-
       height_priors<-list()
-
-
 
       Y=((heights_by_sp-.05)/.95)
       FT_heights<- -1*log(Y/(1-Y))
+      pars$heights=FT_heights
 
       #height_priors=list()
-
-
-
       #making a list of functions rather than one big function so we can call the specific function we want only when the move on that par happens,
       #do we really need to calculate the prior for EVERY sp EVERY iteration...nah thats gonna slow the whole mcmc down so instead lets just do it when there is a proposal on that height
-
       height_priors<-lapply(1:length(FT_heights), function(sp){ force(FT_heights[[sp]]);
         (function(x) dnorm(x, mean=FT_heights[[sp]], 0.15, log=T) )  })
 
@@ -2636,7 +2663,7 @@
       #print(pa_data[proposal[[x]]$missing])
       missing.glm.lik <- GLM_Likelihood_MV_fn(res=prop_traits_only, full_pa_data=missSPdat)
       prop.glm.lik <- cur.liks$glm.lik
-      cur.liks$glm.lik[missSP]
+      #cur.liks$glm.lik[missSP]
       prop.glm.lik[missSP] <- missing.glm.lik
       prop.glm.sum.lik <- sum(unlist(prop.glm.lik))
       GLM <- prop.glm.sum.lik-cur.liks$glm.sum.lik
@@ -2644,7 +2671,7 @@
 
       if(prop==0){
 
-        #if height was chosen as the prior then you gotta calculate how the prior changes
+        #if height was chosen as the prior then you must calculate how the prior changes
 
 
 
