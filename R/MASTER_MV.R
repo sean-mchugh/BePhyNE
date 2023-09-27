@@ -750,7 +750,7 @@
     return(list(start_pars_bt=res_new, start_pars_ft=res_ft_new, start_td=res_td_new, start_td_bt=res_td_bt_new))
   }
 
-  find_good_start_pars=function(Prior_object,dist="norm",  ntries=1000){
+  find_good_start_pars=function(Prior_object, tree, dist="norm",  ntries=1000){
     rep=0
 
     glm_heights=lapply(1:length(Prior_object), function(pred) Prior_object[[pred]]$pars$heights)
