@@ -1,37 +1,37 @@
-require(readr)
-require(tibble)
-require(MCMCpack)
-require(devtools)
-require(coda)
-require(devtools)
-require(coda)
-require(ape)
-require(truncdist)
-require(geiger)
-require(phytools)
-require(tidyr)
-require(ratematrix)
-require(mvMORPH)
-require(dplyr)
-require(mvtnorm)
-require(MultiRNG)
-require(Rphylopars)
-require(Rcpp)
-require(doParallel)
-require(corpcor)
-require(Matrix)
-require(treeplyr)
-#require(bayou)
-require(crayon)
-require(shape)
-require(scales)
-require(phytools)
-require(robustbase)
+#require(readr)
+#require(tibble)
+#require(MCMCpack)
+#require(devtools)
+#require(coda)
+#require(devtools)
+#require(coda)
+#require(ape)
+#require(truncdist)
+#require(geiger)
+#require(phytools)
+#require(tidyr)
+#require(ratematrix)
+#require(mvMORPH)
+#require(dplyr)
+#require(mvtnorm)
+#require(MultiRNG)
+#require(Rphylopars)
+#require(Rcpp)
+#require(doParallel)
+#require(corpcor)
+#require(Matrix)
+#require(treeplyr)
+##require(bayou)
+#require(crayon)
+#require(shape)
+#require(scales)
+#require(phytools)
+#require(robustbase)
 
 
 
 {
-
+######Utils#########
 
   makeTransparent<- function (someColor, alpha = 100)
   {
@@ -41,6 +41,77 @@ require(robustbase)
           alpha = alpha, maxColorValue = 255)
     })
   }
+
+  make.treedata =function (tree, data, name_column = "detect", as.is = FALSE)
+  {
+    #from Josef Uyeda's treeplyer package loaded here to avoid having to install treeplyer
+    if (class(tree) != "phylo")
+      stop("tree must be of class 'phylo'")
+    if (is.vector(data)) {
+      data <- as.matrix(data)
+      colnames(data) <- "trait"
+    }
+    if (is.null(colnames(data))) {
+      colnames(data) <- paste("trait", 1:ncol(data), sep = "")
+    }
+    coln <- colnames(data)
+    if (name_column == "detect") {
+      if (is.null(rownames(data))) {
+        tmp.df <- data.frame(data)
+        offset <- 0
+      }
+      else {
+        tmp.df <- data.frame(rownames(data), data)
+        offset <- 1
+      }
+      matches <- sapply(tmp.df, function(x) sum(x %in% tree$tip.label))
+      if (all(matches == 0))
+        stop("No matching names found between data and tree")
+      name_column <- which(matches == max(matches)) - offset
+    }
+    else {
+      if (is.character(name_column)) {
+        name_column <- which(name_column == coln)[1]
+      }
+    }
+    dat <- as_tibble(as.data.frame(lapply(1:ncol(data), function(x) type.convert(apply(data[,
+                                                                                            x, drop = FALSE], 1, as.character), as.is = as.is))))
+    colnames(dat) <- coln
+    if (name_column == 0) {
+      clnm <- colnames(dat)
+      dat <- dat[, clnm, drop = FALSE]
+      dat.label <- as.character(rownames(data))
+    }
+    else {
+      if (is.numeric(name_column)) {
+        clnm <- (1:ncol(data))[-name_column]
+      }
+      else {
+        clnm <- colnames(dat)[-which(colnames(dat) == name_column)]
+      }
+      dat <- dat[, clnm, drop = FALSE]
+      dat.label <- as.character(as.data.frame(data)[[name_column]])
+    }
+    data_not_tree <- setdiff(dat.label, tree$tip.label)
+    tree_not_data <- setdiff(tree$tip.label, dat.label)
+    phy <- drop.tip(tree, tree_not_data)
+    dat <- filter(dat, dat.label %in% phy$tip.label)
+    dat.label <- dat.label[dat.label %in% phy$tip.label]
+    if (any(duplicated(dat.label))) {
+      warning("Duplicated data in dataset, selecting first unique entry for each species")
+      dat <- filter(dat, !duplicated(dat.label))
+      dat.label <- dat.label[!duplicated(dat.label)]
+    }
+    ...my.order... <- match(dat.label, phy$tip.label)
+    dat <- arrange(dat, ...my.order...)
+    td <- list(phy = phy, dat = dat)
+    class(td) <- c("treedata", "list")
+    attributes(td)$tip.label <- phy$tip.label
+    attributes(td)$dropped <- list(dropped_from_tree = data_not_tree,
+                                   dropped_from_data = tree_not_data)
+    return(td)
+  }
+
 
   ###transformations##################################################################################################################################################################
 
