@@ -9,9 +9,12 @@ Description: More about what it does (maybe more than one line)
 License: What license is it under?
 Encoding: UTF-8
 LazyData: true
-Imports:
+Depends:
+		readr,
 		tibble,
 		MCMCpack,
+		devtools,
+		coda,
 		devtools,
 		coda,
 		ape,
@@ -32,4 +35,3 @@ Imports:
 		phytools,
 		robustbase
 VignetteBuilder: knitr
-RoxygenNote: 7.2.0
