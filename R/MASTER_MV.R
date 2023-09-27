@@ -137,6 +137,41 @@
     })
   }
 
+  make_tuning_par_obj=function( tree, npred, center_slide=.18,
+                                center_mult=.12,
+                                width_slide=.15,
+                                width_mult=.2,
+                                height_slide=.5,
+                                height_mult=.3,
+                                w_mu_slide=c(0.6,0.6),
+                                w_mu_multi=c(0.6,0.6),
+                                w_sd_slide=c(.15,.12),
+                                w_sd_multi=c(.15,.12),
+                                v_cor_iwish=100)
+    {
+    pred=npred
+    tuning<-  list(
+      niche_prop= lapply(1:pred, function(pred) list(slide=tibble(center=sample(center_slide, length(tree$tip.label), replace=T),
+                                                                  width= sample(width_slide, length(tree$tip.label), replace=T),
+                                                                  height= sample(height_slide, length(tree$tip.label), replace=T) ),
+                                                     multi=tibble(center=sample(center_mult , length(tree$tip.label), replace=T),
+                                                                  width= sample(width_mult , length(tree$tip.label), replace=T),
+                                                                  height= sample(height_mult, length(tree$tip.label), replace=T)  )
+      )),
+      w_mu =  lapply(1:pred, function(pred) list(slide=w_mu_slide,
+                                                 multi=w_mu_multi))
+      ,
+      w_sd =  lapply(1:pred, function(pred)  list(slide=w_sd_slide,
+                                                  multi=w_sd_multi)
+      ),
+      v_cor       = lapply(1:pred, function(pred) v_cor_iwish)
+    )
+
+    return(tuning)
+
+  }
+
+
   ###transformations##################################################################################################################################################################
 
   traits2coefs <- function(traits, v=0.05){
