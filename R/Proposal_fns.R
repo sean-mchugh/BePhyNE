@@ -9,7 +9,14 @@ make_tuning <- function(tree, pred,
                         height_mult  = 0.3,
                         w_mu  = c(0.6, 0.6),
                         w_sd  = c(0.15, 0.12),
-                        v_cor = 100) {
+                        v_cor = 100
+                        weights_height =2,
+                        weights_center =3,
+                        weights_width  =3,
+                        weights_theta  =1,
+                        weights_R_corr =1,
+                        weights_R_sd   =1)
+) {
 
   n_species <- length(tree$tip.label)
 
@@ -37,7 +44,23 @@ make_tuning <- function(tree, pred,
     v_cor = lapply(1:pred, function(p) v_cor)
   )
 
-  return(tuning)
+  move_weights= c(weights_height
+                ,weights_center
+                ,weights_width
+                ,weights_theta
+                ,weights_R_corr
+                ,weights_R_sd  )
+
+  move_prob=c("height" = move_weights[[1]]/sum(moves_wieghts),
+              "center" = move_weights[[2]]/sum(moves_wieghts),
+              "width"  = move_weights[[3]]/sum(moves_wieghts),
+              "theta"  = move_weights[[4]]/sum(moves_wieghts),
+              "R_corr" = move_weights[[5]]/sum(moves_wieghts),
+              "R_sd"   = move_weights[[6]]/sum(moves_wieghts))
+
+
+
+  return(list(tuning=tuning, move_probs=move_prob))
 }
 
 
