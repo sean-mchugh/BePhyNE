@@ -51,12 +51,12 @@ make_tuning <- function(tree, pred,
                 ,weights_R_corr
                 ,weights_R_sd  )
 
-  move_prob=c("height" = move_weights[[1]]/sum(moves_wieghts),
-              "center" = move_weights[[2]]/sum(moves_wieghts),
-              "width"  = move_weights[[3]]/sum(moves_wieghts),
-              "theta"  = move_weights[[4]]/sum(moves_wieghts),
-              "R_corr" = move_weights[[5]]/sum(moves_wieghts),
-              "R_sd"   = move_weights[[6]]/sum(moves_wieghts))
+  move_prob=c("height" = move_weights[[1]]/sum(move_weights),
+              "center" = move_weights[[2]]/sum(move_weights),
+              "width"  = move_weights[[3]]/sum(move_weights),
+              "theta"  = move_weights[[4]]/sum(move_weights),
+              "R_corr" = move_weights[[5]]/sum(move_weights),
+              "R_sd"   = move_weights[[6]]/sum(move_weights))
 
 
 
