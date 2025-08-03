@@ -15,7 +15,7 @@ make_tuning <- function(tree, pred,
                         weights_width  =3,
                         weights_theta  =1,
                         weights_R_corr =1,
-                        weights_R_sd   =1)
+                        weights_R_sd   =1
 ) {
 
   n_species <- length(tree$tip.label)
