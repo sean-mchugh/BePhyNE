@@ -33,5 +33,7 @@ Depends:
 		corpcor,
 		Matrix,
 		phytools,
-		robustbase
+		robustbase,
+		knitr
 VignetteBuilder: knitr
+RoxygenNote: 7.3.2

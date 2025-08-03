@@ -434,7 +434,7 @@ head(mcmc_lt$R_cor$pred_2$opt.tol)
 head(mcmc_lt$R_cor$pred_2$br_tol )
 
 
-````
+```
 
 Now lets start plotting some of our distributions, and getting posterior distribution using HPDInterval (Highest Posterior Density Interval)
 
@@ -444,7 +444,7 @@ Now lets start plotting some of our distributions, and getting posterior distrib
 HPDs<-HPD_list(mcmc_lt,tree, prob=0.95)
 
 
-````
+```
 
 
 lets plot some MCMC chains, we can either do that directly for specific parameters using traceplot and dense plot, or plotting all of them using PlotBePhyNEchains() fn, which will return a set of files with the chains and/or densities for each parameter either to your work directory or a specified directory, writing these plots to files is usually the best move as there are a lot of parameters (species responses AND mvBM parameters....thats a lot of plotting)
@@ -455,15 +455,13 @@ traceplot(mcmc_lt$A$pred_1$optimum)
 
 densplot(mcmc_lt$A$pred_1$optimum)
 
-````
+```
 
 
 ```{r, eval=F}
 
 PlotBePhyNEchains(mcmc_lt)
 
-````
+```
 
 
-> "He who gives up [code] safety for [code] speed deserves neither."
-([via](https://twitter.com/hadleywickham/status/504368538874703872))

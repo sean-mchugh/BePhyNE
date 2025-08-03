@@ -1,26 +1,78 @@
 
 ###Utils##################################################################################################################################################################
 
+'%!in%' <- function(x,y)!('%in%'(x,y))
+
+format_BePhyNE_data = function(pa_data, tree, sp_col, occ_col, env_preds, scale_atr=NA){
+
+  pres_data_scaled= pa_data
+
+  if( sum(is.na(scale_atr))>0){
+    scaled_climate = scale(pa_data[,env_preds])
+
+    pres_data_scaled[,env_preds]= scaled_climate[,env_preds]
+
+    scale_atr <- list(scale=lapply(env_preds, function(pred)(attr(scaled_climate , "scaled:scale")[colnames(scaled_climate)==pred])),
+                      center= lapply(env_preds, function(pred) (attr(scaled_climate,  "scaled:center")[colnames(scaled_climate)==pred]))
+    )
+
+    names(scale_atr$scale) = env_preds
+    names(scale_atr$center) = env_preds
+
+
+  } else{
+
+
+    scaled_climate = do.call(cbind ,lapply(env_preds, function(pred) (pa_data[,pred]-scale_atr$center[[pred]])/scale_atr$scale[[pred]]) )
+
+    colnames(scaled_climate) = env_preds
+
+    pres_data_scaled[,env_preds]= scaled_climate[,env_preds]
+
+  }
+
+  data_final <- lapply(split(pres_data_scaled[c(occ_col, env_preds)],pres_data_scaled[sp_col]), as.list)
+  #replace vector of species names with a single name
+  data_final_tree = list()
+  for (sp in 1:length(tree$tip.label)) {
+    sp_name= tree$tip.label[[sp]]
+
+    data_final[[sp_name]]$species= names(data_final[sp_name])[[1]]
+    data_final[[sp_name]] = data_final[[sp_name]][c(sp_col, occ_col, env_preds)]
+    names( data_final[[sp_name]]) =c("species", "y", paste0("X", 1:(length(names( data_final[[sp_name]]))-2)) )
+
+    data_final_tree[[sp_name]] = data_final[[sp_name]]
+  }
+
+  # match data_final species order to tree tip order
+  #data_final=data_final[order(match(unlist(lapply(data_final, function(sp) sp[[sp_col]])), tree$tip.label))]
+
+  return(list(data=data_final_tree, scale = scale_atr))
+}
+
+
+###Utils##################################################################################################################################################################
+
 data_df2list=function(df, tree)
 {
-  
+
   #```{r}
   #
   sp_col=(1:ncol(df))[names(df)=="species"]
-  
+
   data_final<- lapply(split(df[sp_col:ncol(df)],df$species), as.list)
   #replace vector of species names with a single name
   for (sp in 1:length(data_final)) {
-    
+
     data_final[[sp]]$species= data_final[[sp]]$species[[1]]
-    
+
   }
-  
+
   # match data_final species order to tree tip order
   data_final=data_final[order(match(unlist(lapply(data_final, function(sp) sp$species)), tree$tip.label))]
-  
+
   #```
-  
+
   return(data_final)
 }
 
@@ -104,42 +156,36 @@ makeTransparent<- function (someColor, alpha = 100)
   })
 }
 
-make_tuning <- function(tree, pred,
-                        center_slide = 0.18,
-                        center_mult  = 0.12,
-                        width_slide  = 0.15,
-                        width_mult   = 0.2,
-                        height_slide = 0.5,
-                        height_mult  = 0.3,
-                        w_mu  = c(0.6, 0.6),
-                        w_sd  = c(0.15, 0.12),
-                        v_cor = 100) {
-  
-  n_species <- length(tree$tip.label)
-  
-  tuning <- list(
-    niche_prop = lapply(1:pred, function(p) list(
-      slide = tibble(
-        center = sample(center_slide, n_species, replace = TRUE),
-        width  = sample(width_slide,  n_species, replace = TRUE),
-        height = sample(height_slide, n_species, replace = TRUE)
-      ),
-      multi = tibble(
-        center = sample(center_mult, n_species, replace = TRUE),
-        width  = sample(width_mult,  n_species, replace = TRUE),
-        height = sample(height_mult, n_species, replace = TRUE)
-      )
+make_tuning_par_obj=function( tree, npred, center_slide=.18,
+                              center_mult=.12,
+                              width_slide=.15,
+                              width_mult=.2,
+                              height_slide=.5,
+                              height_mult=.3,
+                              w_mu_slide=c(0.6,0.6),
+                              w_mu_multi=c(0.6,0.6),
+                              w_sd_slide=c(.15,.12),
+                              w_sd_multi=c(.15,.12),
+                              v_cor_iwish=100)
+{
+  pred=npred
+  tuning<-  list(
+    niche_prop= lapply(1:pred, function(pred) list(slide=tibble(center=sample(center_slide, length(tree$tip.label), replace=T),
+                                                                width= sample(width_slide, length(tree$tip.label), replace=T),
+                                                                height= sample(height_slide, length(tree$tip.label), replace=T) ),
+                                                   multi=tibble(center=sample(center_mult , length(tree$tip.label), replace=T),
+                                                                width= sample(width_mult , length(tree$tip.label), replace=T),
+                                                                height= sample(height_mult, length(tree$tip.label), replace=T)  )
     )),
-    w_mu = lapply(1:pred, function(p) list(
-      slide = w_mu,
-      multi = w_mu
-    )),
-    w_sd = lapply(1:pred, function(p) list(
-      slide = w_sd,
-      multi = w_sd
-    )),
-    v_cor = lapply(1:pred, function(p) v_cor)
+    w_mu =  lapply(1:pred, function(pred) list(slide=w_mu_slide,
+                                               multi=w_mu_multi))
+    ,
+    w_sd =  lapply(1:pred, function(pred)  list(slide=w_sd_slide,
+                                                multi=w_sd_multi)
+    ),
+    v_cor       = lapply(1:pred, function(pred) v_cor_iwish)
   )
-  
+
   return(tuning)
+
 }
