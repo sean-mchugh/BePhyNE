@@ -109,13 +109,13 @@ lapply(1:length(gbif_taxon_keys), function(i) occ_count(gbif_taxon_keys[[i]], ge
 
 max(unlist)
 
-values_pres<-occ_search(gbif_taxon_keys[1:3], hasCoordinate=TRUE, return = 'data', country="US", limit = 100, start = 0, config=progress())
+values_pres<-occ_search(gbif_taxon_keys, hasCoordinate=TRUE, limit = 10000, start = 0)
 
 
 
 {
 
-values_pres <- readRDS("GBIF_clim_pres.RDS")
+#values_pres <- readRDS("GBIF_clim_pres.RDS")
 
 
 names(values_pres)<-gsub(" ","_",names(values_pres)  )
@@ -138,7 +138,7 @@ scaled_occurrences<-scale(do.call(rbind, values_pres))
 
 
 #View(values_pres)
-######trim to only the bioclim variables we want (1 and 12)
+#trim to only the bioclim variables we want (1 and 12)
 
 
 
@@ -148,7 +148,7 @@ scaled_occurrences<-scale(do.call(rbind, values_pres))
 
 #values_pres <- lapply(1:length(values_pres), function(sp) na.omit(values_pres[[sp]][,c(1,2,3,4,15)]))
 
-#########filter all occurrences for other species as absences....gotta filter from here though otherwise you will get biased garbage
+#filter all occurrences for other species as absences....gotta filter from here though otherwise you will get biased garbage
 
 values_abs<- lapply(1:length(values_pres), function(sp) cbind(do.call(rbind,values_pres[-sp]), seq(0, by=0, length=nrow(do.call(rbind,values_pres[-sp])) ) ) )
 
@@ -261,7 +261,7 @@ values_abs_all<-list()
 
 #pres_test<-values_pres
 
-#######sample down presences so we dont have an obscene number
+#sample down presences so we dont have an obscene number
 
 
 for (sp in 1: length(values_pres)){
@@ -293,7 +293,7 @@ for (sp in 1: length(values_pres)){
 
 #spThin::thin(loc.data = values_pres[[1]], lat.col = "decimallatitude", long.col = "decimallongitude", spec.col = "species" )
 
-#####how about we downsample occurrences for ultra common species with a ton of overlap and account for that spatial autocorrelation
+#how about we downsample occurrences for ultra common species with a ton of overlap and account for that spatial autocorrelation
 
 #values_pres[[1]][[which(names(values_pres[1])=="species")]]
 
