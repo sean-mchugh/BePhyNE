@@ -9,7 +9,7 @@ make_tuning <- function(tree, pred,
                         height_mult  = 0.3,
                         w_mu  = c(0.6, 0.6),
                         w_sd  = c(0.15, 0.12),
-                        v_cor = 100
+                        v_cor = 100,
                         weights_height =2,
                         weights_center =3,
                         weights_width  =3,
