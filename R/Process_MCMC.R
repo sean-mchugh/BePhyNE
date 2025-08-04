@@ -178,7 +178,7 @@ logdf2medians = function(logdf){
 
   medians = colMedians_df(logdf)
 
-  return(logdf2parobjs(medians)_
+  return(logdf2parobjs(medians))
 
 
 }
