@@ -54,13 +54,11 @@ separate.data<-function(data_final, ratio=.5){
 }
 
 
-
-
 predict.ENE<-function(traits, pa_data){
   
   #must use pa_data like object with list of list format with data for each sp
   
-  X= lapply(1:nrow(traits[[1]]), function(sp)  list(pa_data[[sp]]$X1, pa_data[[sp]]$X2))
+  X= lapply(1:nrow(traits[[1]]), function(sp)  lapply(3:length(pa_data[[sp]]), function(pred) pa_data[[sp]][[pred]]))
   
   betas<-lapply(1:length(traits), function(pred) traits2coefs(traits[[pred]]))
   
@@ -77,12 +75,9 @@ predict.ENE<-function(traits, pa_data){
 }
 
 
-
-
-
-assess.predict<-function(presProb, plot=F){
+assess.predict = function(presProb, plot=F){
   
-  if(is.na(presProb$y)==T){
+  if(sum(is.na(presProb$y))==1){
     
     paste("no data for this one chief")
     return(list(AUC=NA, TSS=NA, ctable=NA))
@@ -136,3 +131,35 @@ assess.predict<-function(presProb, plot=F){
   return(list(AUC=AUC, TSS=TSS, ctable=ctable_complete))
   
 }
+
+
+predict_stats  = function(traits, pa_data){
+  
+  sp_names = unlist(lapply(pa_data, function(i) i$species))
+  
+  presProb = predict.ENE(traits, pa_data)
+  
+  predict_list =  lapply(1:length(presProb), function(i) {
+    print(i)
+    assess.predict(presProb[[i]])
+  }
+  )
+  
+  names(predict_list) = sp_names
+  
+  return(predict_list)
+  
+}
+
+
+AUC_posterior_median =function(log_summary, pa_data){
+  
+  traits = lapply(log_summary$median_parlist$traits, function(i) i[[1]])
+  
+  predict_stats_list = predict_stats(traits, pa_data)
+  
+  return(predict_stats_list)
+}
+
+
+

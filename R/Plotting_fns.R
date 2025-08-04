@@ -985,12 +985,19 @@ plot_response_curves <- function(tree,
                                  models_list,       # list of models -> each is a list of matrices: one per predictor
                                  model_names    = paste0("model", 1:length(models_list)),
                                  predictor_names= paste0("pred", 1:length(models_list[[1]])),   # character vector of predictor names
-                                 scale_atr,         # list with $center and $scale (same length as predictors)
+                                 scale_atr=NA,         # list with $center and $scale (same length as predictors)
                                  curve_colors      = rep(make.transparent("black", 255/255), length(models_list)),
                                  curve_fill_colors = rep(make.transparent("white", 255/255), length(models_list)),
                                  line_types    = rep(1, length(models_list)),
                                  xlims = NULL
 ) {
+  
+  
+  #if(class(models_list[[1]][[1]])!="list"){
+  #  models_list = list(models_list)
+  #}
+  
+  
   library(ape)
   response_function = function(x) 1 / (1 + exp(-x))
   
@@ -1083,8 +1090,13 @@ plot_response_curves <- function(tree,
       }
     }
     
-    xlabels <- round(seq(predictor_ranges[[pred_idx]][1], predictor_ranges[[pred_idx]][2], length.out = 4) *
-                       scale_atr$scale[[pred_idx]] + scale_atr$center[[pred_idx]], 2)
+    if(sum(is.na(scale_atr))==1){
+      xlabels <- round(seq(predictor_ranges[[pred_idx]][1], predictor_ranges[[pred_idx]][2], length.out = 4), 2)
+      
+    }else{
+      xlabels <- round(seq(predictor_ranges[[pred_idx]][1], predictor_ranges[[pred_idx]][2], length.out = 4) *
+                         scale_atr$scale[[pred_idx]] + scale_atr$center[[pred_idx]], 2)
+    }
     label_xloc <- seq(xplot_range[1], xplot_range[2], length.out = 4)
     
     text(x = label_xloc, y = rep(-0.2, 4), labels = xlabels, cex = 0.4)
@@ -1102,3 +1114,107 @@ plot_response_curves <- function(tree,
          box.col="transparent", cex=.8,ncol=3,)
   
 }
+
+
+
+plot_summary_ridgeplot = function(tree,
+                                  log_summary  ,  
+                                  model_names       = paste0("model", 1),
+                                  predictor_names   = NA,   # character vector of predictor names
+                                  scale_atr         = NA,         # list with $center and $scale (same length as predictors)
+                                  curve_colors      = rep(make.transparent("black", 255/255),1),
+                                  curve_fill_colors = rep(make.transparent("white", 255/255), 1),
+                                  line_types        = rep(1, 1),
+                                  xlims = NULL
+){
+  
+  
+  models_list = list(lapply(logdf_summary$median_parlist$traits, function(i) i[[1]]))
+  
+  if(sum(is.na(predictor_names))==1){
+    
+    predictor_names = paste0("Predictor ", 1:length(model_list[[1]]))
+    
+  }
+  
+  plot_response_curves(tree
+                       ,models_list       = models_list       # list of models -> each is a list of matrices: one per predictor
+                       ,model_names       = model_names      
+                       ,predictor_names   = predictor_names  
+                       ,scale_atr         = scale_atr               
+                       ,curve_colors      = curve_colors     
+                       ,curve_fill_colors = curve_fill_colors
+                       ,line_types        = line_types       
+                       ,xlims             = xlims 
+  )
+  
+  
+  
+  
+}
+
+
+
+plot_summarylist_ridgeplot = function(tree,
+                                  log_summarylist  ,  
+                                  model_names       = paste0("model", length(log_summarylist)),
+                                  predictor_names   = NA,   # character vector of predictor names
+                                  scale_atr         = NA,         # list with $center and $scale (same length as predictors)
+                                  curve_colors      = rep(make.transparent("black", 255/255), length(log_summarylist)),
+                                  curve_fill_colors = rep(make.transparent("white", 255/255), length(log_summarylist)),
+                                  line_types        = rep(1, length(log_summarylist)),
+                                  xlims = NULL
+){
+  
+  
+  model_list = lapply(logdf_summary, function (x) lapply(x$median_parlist$traits, function(i) i[[1]]))
+  
+  if(sum(is.na(predictor_names))==1){
+    
+    predictor_names = paste0("Predictor ", 1:length(model_list[[1]]))
+    
+  }
+  
+  plot_response_curves(tree
+                       ,models_list       = model_list       # list of models -> each is a list of matrices: one per predictor
+                       ,model_names       = model_names      
+                       ,predictor_names   = predictor_names  
+                       ,scale_atr         = scale_atr               
+                       ,curve_colors      = curve_colors     
+                       ,curve_fill_colors = curve_fill_colors
+                       ,line_types        = line_types       
+                       ,xlims             = xlims 
+  )
+  
+  
+  
+  
+}
+
+
+plot_AUC_treebarplot = function(tree, predict_stats_list, cols= c("blue"), xlim =c(0,100), fsize = 0.6, mar = c(5.1, 1, 1.1, 0.5),  label.offset=1){
+  
+  AUC = unlist(lapply(predict_list, function(i) i$AUC))
+  
+  names(AUC) = sp_names
+  
+  
+  plotTree.barplot(
+    tree,
+    AUC,
+    args.barplot = list(
+      col = cols,
+      border = cols,
+      xlab = "AUC",
+      xlim=xlim,
+      mar = c(5.1, 0, 0.1, 4)  # right margin for barplot
+    ),
+    args.plotTree = list(
+      fsize = fsize,                # smaller tip labels
+      mar = mar,  # left margin for tree
+      label.offset          # more offset between tree and bars
+    )
+  )
+  
+}
+

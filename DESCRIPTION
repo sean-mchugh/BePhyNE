@@ -34,6 +34,7 @@ Depends:
 		Matrix,
 		phytools,
 		robustbase,
-		knitr
+		knitr,
+		flux
 VignetteBuilder: knitr
 RoxygenNote: 7.3.2

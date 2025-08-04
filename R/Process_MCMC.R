@@ -1,9 +1,8 @@
 
 
-read_BePhyNE_log=function(file_name)
-  read.table(filename,sep = "\t", header = T)
-end
-
+read_BePhyNE_log=function(file_name){
+  read.table(file_name,sep = "\t", header = T)
+}
 
 colMedians_df <- function(df) {
   is_num <- sapply(df, is.numeric)
@@ -17,11 +16,12 @@ logdf2traitsdf_list = function(logdf, transform2nichespace=T, logrows= 1:nrow(lo
   predictors <- unique(gsub("pred_(\\d+)_.*", "\\1", grep("^pred_\\d+_", names(logdf), value = TRUE)))
   pred_prefix <- paste0("pred_", predictors, "_")
 
-  traits_df_list=lapply(predictors, function(pred) list())
+  traits_df_list= list() #lapply(predictors, function(pred) list())
 
 
+  count=0
   for(x in logrows){
-
+  count=count+1
     for(pred in predictors){
 
       pred_prefix <- paste0("pred_", pred, "_")
@@ -29,7 +29,7 @@ logdf2traitsdf_list = function(logdf, transform2nichespace=T, logrows= 1:nrow(lo
       print(x)
       # --- Trait matrix ---
       trait_cols <- grep(paste0("^", pred_prefix, "dat\\.trait"), names(logdf), value = TRUE)
-      trait_mat <- logdf[i, trait_cols, drop = FALSE]
+      trait_mat <- logdf[x, trait_cols, drop = FALSE]
       #trait_medians <- apply(trait_mat, 2, median, na.rm = TRUE)
 
       # Extract row and column from names like "pred_1_dat.traitXYZ"
@@ -61,9 +61,9 @@ logdf2traitsdf_list = function(logdf, transform2nichespace=T, logrows= 1:nrow(lo
 
       if(transform2nichespace==T){
         BT_trait_matrix = do.call(rbind, lapply(1:nrow(trait_matrix), function(i) backTransform1(trait_matrix[i,])))
-        traits_df_list[[pred]][[x]] = BT_trait_matrix
+        traits_df_list[[pred]][[count]] = BT_trait_matrix
       }else{
-        traits_df_list[[pred]][[x]] = trait_matrix
+        traits_df_list[[pred]][[count]] = trait_matrix
 
       }
 
@@ -80,13 +80,15 @@ logdf2R_list = function(logdf, logrows= 1:nrow(logdf)){
   predictors <- unique(gsub("pred_(\\d+)_.*", "\\1", grep("^pred_\\d+_", names(logdf), value = TRUE)))
 
 
-  Rsd_list  = lapply(predictors, function(pred) list())
-  Rcor_list = lapply(predictors, function(pred) list())
-  R_list    = lapply(predictors, function(pred) list())
+  Rsd_list  = list() #lapply(predictors, function(pred) list())
+  Rcor_list = list() #lapply(predictors, function(pred) list())
+  R_list    = list() #lapply(predictors, function(pred) list())
 
-
+  count=0
+  
   for(i in logrows){
-
+    count=count+1
+    
     for(pred in predictors){
 
       pred_prefix <- paste0("pred_", pred, "_")
@@ -98,7 +100,7 @@ logdf2R_list = function(logdf, logrows= 1:nrow(logdf)){
 
       # --- R_cor vector ---
       Rcor_cols <- grep(paste0("^", pred_prefix, "R_cor\\d+"), names(logdf), value = TRUE)
-      Rcor      <-  matrix(as.numeric(logdf[i,Rcor_cols]), nrow = length(Rsd_median), byrow = TRUE)
+      Rcor      <-  matrix(as.numeric(logdf[i,Rcor_cols]), nrow = length(Rsd), byrow = TRUE)
       #Rcor_median <- matrix(apply(Rcor_mat, 2, median, na.rm = TRUE), nrow = length(Rsd_median), byrow = TRUE)
 
       # --- Rate matrix ---
@@ -108,9 +110,9 @@ logdf2R_list = function(logdf, logrows= 1:nrow(logdf)){
 
       R = corpcor::rebuild.cov( r = Rcor, v = as.numeric(as.vector(Rsd)))
 
-      Rsd_list[[pred]][[i]]  = Rsd
-      Rcor_list[[pred]][[i]] = Rcor
-      R_list[[pred]][[i]]    = R
+       Rsd_list[[pred]][[count]]  = Rsd
+      Rcor_list[[pred]][[count]] = Rcor
+         R_list[[pred]][[count]]    = R
 
     }
   }
@@ -128,9 +130,11 @@ logdf2A_list = function(logdf, transform2nichespace=T, logrows= 1:nrow(logdf)){
 
   predictors <- unique(gsub("pred_(\\d+)_.*", "\\1", grep("^pred_\\d+_", names(logdf), value = TRUE)))
 
-  A_list  =  lapply(predictors, function(pred) list())
+  A_list  =  list() #lapply(predictors, function(pred) list())
 
+  count=0
   for(i in logrows){
+    count=count+1
     for(pred in predictors){
 
       pred_prefix <- paste0("pred_", pred, "_")
@@ -139,10 +143,10 @@ logdf2A_list = function(logdf, transform2nichespace=T, logrows= 1:nrow(logdf)){
       A_mat <- logdf[i,A_cols]
 
       if(transform2nichespace==T){
-        BT_A_list = backTransform1(unlist(c(A_mat,1) ))[1:2]
+        A_list[[pred]][[count]]  = backTransform1(unlist(c(A_mat,1) ))[1:2]
       }else{
 
-        A_list[[pred]][[i]]  = A_mat
+        A_list[[pred]][[count]]  = A_mat
       }
     }
   }
@@ -153,13 +157,13 @@ logdf2A_list = function(logdf, transform2nichespace=T, logrows= 1:nrow(logdf)){
 }
 
 
-logdf2parobjs = function(logdf){
+logdf2parlist = function(logdf, transform2nichespace=T, logrows= 1:nrow(logdf)){
 
-  traits_list = logdf2traitsdf_list(logdf, logrows = 1)
+  traits_list = logdf2traitsdf_list(logdf, transform2nichespace, logrows)
 
-  A_list  = logdf2A_list(logdf, logrows = 1)
+  A_list  = logdf2A_list(logdf, transform2nichespace, logrows)
 
-  R_lists = logdf2R_list(logdf, logrows = 1)
+  R_lists = logdf2R_list(logdf, logrows)
   R_lists$Rsd
   R_lists$Rcor
   R_lists$R
@@ -178,11 +182,10 @@ logdf2medians = function(logdf){
 
   medians = colMedians_df(logdf)
 
-  return(logdf2parobjs(medians))
+  return(logdf2parlist(medians))
 
 
 }
-
 
 
 
@@ -191,9 +194,13 @@ summarize_logdf=function(logdf, HPD_prob=0.95){
   mcmc_obj = coda::as.mcmc(logdf[,-1])
   mcmc_ESS = effectiveSize(mcmc_obj)
   mcmc_HPD = HPDinterval(mcmc_obj, prob = HPD_prob)
-  mcmc_median = colMedians_df(logdf)
-  
+
+  mcmc_median_df      = colMedians_df(logdf)
+  mcmc_median_parlist = logdf2medians(logdf)
+
   summary = list(ESS = mcmc_ESS
                  ,HPD = mcmc_HPD
-                 ,median = mcmc_median)
+                 ,median_df = mcmc_median_df
+                 ,median_parlist = mcmc_median_parlist
+                 )
 }
