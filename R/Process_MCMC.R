@@ -183,3 +183,17 @@ logdf2medians = function(logdf){
 
 }
 
+
+
+
+summarize_logdf=function(logdf, HPD_prob=0.95){
+  
+  mcmc_obj = coda::as.mcmc(logdf[,-1])
+  mcmc_ESS = effectiveSize(mcmc_obj)
+  mcmc_HPD = HPDinterval(mcmc_obj, prob = HPD_prob)
+  mcmc_median = colMedians_df(logdf)
+  
+  summary = list(ESS = mcmc_ESS
+                 ,HPD = mcmc_HPD
+                 ,median = mcmc_median)
+}

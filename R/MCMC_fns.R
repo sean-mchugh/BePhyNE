@@ -3,11 +3,10 @@
 
 #####Estimator###############################################################################################################################################################################
 
-Write_to_File = function (dir, outname, ID, iteration, current_vals, append = F)
+Write_to_File = function (filename,iteration, current_vals, append = F)
 {
-  files <- list(file(file.path(dir, paste(outname, ".", ID,
-                                          ".pars.log", sep = "")), open = "a"), file(file.path(dir,
-                                                                                               paste(outname, ".", ID, ".log", sep = "")), open = "a"))
+  files <- list(file(file.path( paste(filename,
+                                          ".pars.log", sep = "")), open = "a"), file(file.path( paste(filename, ".log", sep = "")), open = "a"))
 
   iteration
   if (append == F) {
@@ -36,9 +35,9 @@ Write_to_File = function (dir, outname, ID, iteration, current_vals, append = F)
 metro_haste_full_MV = function (R_corr_start, R_sd_start, A_start, Prior, tree, tibble_data,
                                 pa_data, iterations, burnin, move_prob = c(2/5, 2/5, 1/15,
                                                                            1/15, 1/15), n, print.i.freq = 100, print.ac.freq = 10,
-                                printing = TRUE, trim = T, trim_freq = 1, H_fixed = T, tuning,
-                                k, all_props = F, center_fixed = F, write_file = T, IDlen = 5,
-                                dir, outname, prior_only = F, glm_only = F, plot = F, plot_freq,
+                                printing = TRUE, trim = T, trim_freq = 1, H_fixed = F, tuning,
+                                k, all_props = F, center_fixed = F, write_file = T,
+                                filename, prior_only = F, glm_only = F, plot = F, plot_freq,
                                 plot_file, True_pars = NULL)
 {
   {
@@ -156,7 +155,7 @@ metro_haste_full_MV = function (R_corr_start, R_sd_start, A_start, Prior, tree, 
   ID <- paste(sample(x = 1:9, size = IDlen, replace = TRUE),
               collapse = "")
   if (write_file == T) {
-    Write_to_File(dir = dir, outname = outname, ID = ID, i,
+    Write_to_File(filename = filename, i,
                   current_vals = current_vals)
   }
   for (i in 1:iterations) {
@@ -504,13 +503,11 @@ metro_haste_full_MV = function (R_corr_start, R_sd_start, A_start, Prior, tree, 
       if (write_file == T) {
         if (trim == TRUE) {
           if (i%%trim_freq == 0) {
-            Write_to_File(dir = dir, outname = outname,
-                          ID = ID, i,current_vals = current_vals, append = T)
+            Write_to_File(filename = filename, i,current_vals = current_vals, append = T)
           }
         }
         else {
-          Write_to_File(dir = dir, outname = outname,
-                        ID = ID, i, current_vals = current_vals, append = T)
+          Write_to_File(filename = filename, i, current_vals = current_vals, append = T)
         }
       }
       else if (trim == TRUE) {
@@ -629,6 +626,63 @@ metro_haste_full_MV = function (R_corr_start, R_sd_start, A_start, Prior, tree, 
                                                 NA.R.corr.moves = NA.R.corr.moves, NA.R.sd.moves = NA.R.sd.moves),
                 "full"))
   }
+}
+
+
+
+BePhyNE_MCMC= function (tree
+                        ,pa_data 
+                        ,Prior_scale
+                        ,startPars
+                        ,move_details
+                        ,iterations = 10000
+                        ,trim_freq  = iterations/1000
+                        ,write2file = T
+                        ,filename="BePhyNE_test"
+){
+  
+  sparse_sp=F
+  burnin=0
+  chain_end=(iterations-(burnin))/trim_freq
+  plot=F
+  plot_freq=iterations/5
+  n=length(startPars$R$R)
+  v=rep(0.05, n)
+  k=lapply(1:length(v), function(x) log(v[[x]]/(1-v[[x]])))
+  
+  
+  results<- metro_haste_full_MV(      R_corr_start   = startPars$R$R_cor
+                                      , R_sd_start   = startPars$R$R_sd
+                                      , A_start      = startPars$A$A_bt
+                                      , Prior= Prior_scale
+                                      , tree = tree
+                                      , tibble_data = startPars$sim_dat$sim_td_bt
+                                      , pa_data=pa_data
+                                      , iterations=iterations
+                                      , burnin=0
+                                      , move_prob=move_details$move_prob
+                                      , n=n
+                                      , print.i.freq=1000
+                                      , print.ac.freq=100
+                                      , printing=TRUE
+                                      , trim=T
+                                      , trim_freq=trim_freq
+                                      , H_fixed=F
+                                      , tuning=move_details$tuning
+                                      , center_fixed=F
+                                      , write_file=write2file
+                                      , filename=filename
+                                      , prior_only= F
+                                      , glm_only  = F
+                                      , plot=F
+                                      , plot_freq=1
+                                      , plot_file= NA
+                                      , True_pars = NA
+                                      , k=k
+  )
+  
+  return(results)
+  
 }
 
 
