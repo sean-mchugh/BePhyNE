@@ -152,8 +152,6 @@ metro_haste_full_MV = function (R_corr_start, R_sd_start, A_start, Prior, tree, 
   if (all_props == T) {
     props <- list()
   }
-  ID <- paste(sample(x = 1:9, size = IDlen, replace = TRUE),
-              collapse = "")
   if (write_file == T) {
     Write_to_File(filename = filename, i,
                   current_vals = current_vals)
