@@ -140,7 +140,7 @@ predict_stats  = function(traits, pa_data){
   presProb = predict.ENE(traits, pa_data)
   
   predict_list =  lapply(1:length(presProb), function(i) {
-    print(i)
+    #print(i)
     assess.predict(presProb[[i]])
   }
   )
