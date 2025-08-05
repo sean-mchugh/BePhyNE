@@ -1129,7 +1129,7 @@ plot_summary_ridgeplot = function(tree,
 ){
   
   
-  models_list = list(lapply(logdf_summary$median_parlist$traits, function(i) i[[1]]))
+  models_list = list(lapply(log_summary$median_parlist$traits, function(i) i[[1]]))
   
   if(sum(is.na(predictor_names))==1){
     
@@ -1167,7 +1167,7 @@ plot_summarylist_ridgeplot = function(tree,
 ){
   
   
-  model_list = lapply(logdf_summary, function (x) lapply(x$median_parlist$traits, function(i) i[[1]]))
+  model_list = lapply(log_summarylist, function (x) lapply(x$median_parlist$traits, function(i) i[[1]]))
   
   if(sum(is.na(predictor_names))==1){
     
@@ -1194,9 +1194,9 @@ plot_summarylist_ridgeplot = function(tree,
 
 plot_AUC_treebarplot = function(tree, predict_stats_list, cols= c("blue"), xlim =c(0,100), fsize = 0.6, mar = c(5.1, 1, 1.1, 0.5),  label.offset=1){
   
-  AUC = unlist(lapply(predict_list, function(i) i$AUC))
+  AUC = unlist(lapply(predict_stats_list, function(i) i$AUC))
   
-  names(AUC) = sp_names
+  names(AUC) = names(predict_stats_list)
   
   
   plotTree.barplot(
