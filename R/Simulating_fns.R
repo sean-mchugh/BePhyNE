@@ -823,6 +823,15 @@ get_starting_values = function(Prior_scale, reps_before_POE=1000){
 
   heights_glm<- lapply(GLM_only_ml$start_pars_bt, function(pred) pred[,3])
 
+  
+  for(pred in 1:length(heights_glm)){
+    less_than_tol_range    = heights_glm[[pred]] < 0.05
+    greater_than_tol_range = heights_glm[[pred]] > 0.95
+    
+    heights_glm[[pred]][less_than_tol_range   ] = 0.05
+    heights_glm[[pred]][greater_than_tol_range] = 0.95
+  }
+  
   #To get start values we simulate parameters of our model, including individual species response curves and mvBM pars, however because we only can set what the mvBM pars are and the tip responses are subsequently simulated, we dont have a lot of control over what the tip values will be and some potential starting values could be so far off they
 
   #```{r}
