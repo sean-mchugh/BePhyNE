@@ -129,7 +129,7 @@ Prior_scale = make_all_priors(Npred, length(tree$tip.label),
 To get start values we simulate parameters of our model, including individual species response curves and mvBM pars, however because we only can set what the mvBM pars are and the tip responses are subsequently simulated, we dont have a lot of control over what the tip values will be and some potential starting values could be so far off they cause the likelihood function to return nonsensical values, breaking the MCMC.
 
 ```{r message=FALSE, warning=FALSE, results= "hide"}
-startPars = get_starting_values(Prior_scale)[[1]]
+startPars = get_starting_values(Prior_scale = Prior_scale, data = data_final)[[1]]
 
 ```
 

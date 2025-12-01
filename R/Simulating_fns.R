@@ -817,9 +817,9 @@ MLglmStartpars_general = function(species_data, tree, height = NULL, buffer = FA
 }
 
 
-get_starting_values = function(Prior_scale, reps_before_POE=1000){
+get_starting_values = function(Prior_scale, data, reps_before_POE=1000){
 
-  GLM_only_ml<-suppressWarnings(MLglmStartpars_general(species_data = data_obj$data,tree = tree, height = NULL))
+  GLM_only_ml<-suppressWarnings(MLglmStartpars_general(species_data = data,tree = tree, height = NULL))
 
   heights_glm<- lapply(GLM_only_ml$start_pars_bt, function(pred) pred[,3])
 
@@ -828,8 +828,8 @@ get_starting_values = function(Prior_scale, reps_before_POE=1000){
     less_than_tol_range    = heights_glm[[pred]] < 0.05
     greater_than_tol_range = heights_glm[[pred]] > 0.95
     
-    heights_glm[[pred]][less_than_tol_range   ] = 0.05
-    heights_glm[[pred]][greater_than_tol_range] = 0.95
+    heights_glm[[pred]][less_than_tol_range   ] = 0.051
+    heights_glm[[pred]][greater_than_tol_range] = 0.949
   }
   
   #To get start values we simulate parameters of our model, including individual species response curves and mvBM pars, however because we only can set what the mvBM pars are and the tip responses are subsequently simulated, we dont have a lot of control over what the tip values will be and some potential starting values could be so far off they
@@ -893,15 +893,15 @@ get_starting_values = function(Prior_scale, reps_before_POE=1000){
       #break when no tip has a -inf likelihood
 
       #book keep which species are stille bad curves (both in terms of species name and row index in the response curve dataframe)
-      bad_names[[rep]]=names(heights_glm[[1]])[findBadStart(res=startPars_scaled[[i]]$sim_dat$sim_dat_bt, pa_data=data_final, plot=T)]
-      bad_idx=findBadStart(res=startPars_scaled[[i]]$sim_dat$sim_dat_bt, pa_data=data_final, plot=T)
+      bad_names[[rep]]=names(heights_glm[[1]])[findBadStart(res=startPars_scaled[[i]]$sim_dat$sim_dat_bt, pa_data=data, plot=T)]
+      bad_idx=findBadStart(res=startPars_scaled[[i]]$sim_dat$sim_dat_bt, pa_data=data, plot=T)
 
       #if none are bad starting values, break the loop, you are good to go! if not, keep going!
-      if(length(findBadStart(res=startPars_scaled[[i]]$sim_dat$sim_dat_bt, pa_data=data_final, plot=T))==0){break}
+      if(length(findBadStart(res=startPars_scaled[[i]]$sim_dat$sim_dat_bt, pa_data=data, plot=T))==0){break}
 
     }
     #
-    findBadStart(res=startPars_scaled[[i]]$sim_dat$sim_dat_bt, pa_data=data_final, plot=F)
+    findBadStart(res=startPars_scaled[[i]]$sim_dat$sim_dat_bt, pa_data=data, plot=F)
 
 
     #startPars_scaled[[i]]$sim_dat$sim_dat_bt[[1]][,2] ==startPars_scaled[[i]]$sim_dat$sim_td_bt[[1]][,2]
