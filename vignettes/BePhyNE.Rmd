@@ -160,7 +160,7 @@ iterations=1000
 trim_freq= iterations/1000
 burnin=0
 chain_end=(iterations-(burnin))/trim_freq
-filename="~/Downloads/BePhyNE"
+filename="~/Downloads/BePhyNE_demo"
 
 results = BePhyNE_MCMC(tree
                        ,pa_data = sets_full$training
