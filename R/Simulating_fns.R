@@ -266,6 +266,166 @@ priorSim_pars<-function(Prior, phylo, dist, hard_coded_heights=NULL){
 }
 
 
+priorSim_pars<-function(Prior, phylo, dist, hard_coded_heights=NULL){
+  #R_true[[i]] <- matrix(c(10, 0,  0,
+  #                        0,  .1,  0,
+  #                        0,  0, .1), byrow=TRUE,ncol=3, nrow=3)
+  #R_decom<-decompose.cov(R_true[[i]])
+  #R_corr_true[[i]]<-R_decom$r
+  #R_sd_true[[i]]<-sqrt(R_decom$v)
+  if(dist=="unif"){
+    
+    R_sd_true<-lapply(1:length(Prior), function(i) c(runif(1, Prior[[i]]$pars$par.sd[1,1], Prior[[i]]$pars$par.sd[[1,2]]), runif(1, Prior[[i]]$pars$par.sd[2,1], Prior[[i]]$pars$par.sd[2,2])))
+    
+    
+    
+    R_cor_true_R<-lapply(1:length(Prior), function(i) riwish(3,diag(2)))
+    
+    R_cor_true=lapply(1:length(Prior), function(i) cov2cor_C(R_cor_true_R[[i]]))
+    
+    R_true<-lapply(1:length(Prior), function(i) rebuild.cov(R_cor_true[[i]],(R_sd_true[[i]]^2)))
+    
+    
+    # A_true[[i]]= c(20,3,.8)
+    #tA[[i]]= forwardTransform1(A_true[[i]])
+    #[1] 14.000000  1.609438 -1.321756
+    
+    A_true_full=lapply(1:length(Prior), function(i) forwardTransform1(c(runif(1,
+                                                                              min = Prior[[i]]$pars$par.mu[1,1],
+                                                                              max = Prior[[i]]$pars$par.mu[1,2]),
+                                                                        runif(1,
+                                                                              min = Prior[[i]]$pars$par.mu[2,1],
+                                                                              max = Prior[[i]]$pars$par.mu[2,2]))
+    ))
+  } else if (dist=="norm"){
+    
+    R_sd_true<-lapply(1:length(Prior), function(i) unlist( lapply(1:nrow(Prior[[i]]$pars$par.sd), function(trait) c(rlnorm(n=1, meanlog=Prior[[i]]$pars$par.sd[trait,1], sdlog=Prior[[i]]$pars$par.sd[[trait,2]])))))
+    
+    R_cor_true_R<-lapply(1:length(Prior), function(i) riwish(nrow(Prior[[i]]$pars$par.sd)+1,diag(nrow(Prior[[i]]$pars$par.sd))))
+    
+    R_cor_true=lapply(1:length(Prior), function(i) cov2cor_C(R_cor_true_R[[i]]))
+    
+    R_true<-lapply(1:length(Prior), function(i) rebuild.cov(R_cor_true[[i]],(R_sd_true[[i]]^2)))
+    
+    
+    # A_true[[i]]= c(20,3,.8)
+    #tA[[i]]= forwardTransform1(A_true[[i]])
+    #[1] 14.000000  1.609438 -1.321756
+    
+    
+    #commented out this because hights are no longer in BM process
+    #if( is.null(hard_coded_heights)==T){
+    #  
+    #  
+    #  A_true_full=lapply(1:length(Prior), function(i) forwardTransform1(c(rnorm(1,
+    #                                                                            Prior[[i]]$pars$par.mu[1,1], # mean
+    #                                                                            Prior[[i]]$pars$par.mu[1,2]),# sd
+    #                                                                      rlnorm(1,
+    #                                                                             Prior[[i]]$pars$par.mu[2,1],  # mean
+    #                                                                             Prior[[i]]$pars$par.mu[2,2]),
+    #                                                                      runif(1,
+    #                                                                            Prior[[i]]$pars$par.mu[3,1],  # mean
+    #                                                                            Prior[[i]]$pars$par.mu[3,2])) # sd
+    #                                                                    # sd
+    #  ))
+    #  
+    #  
+    #} else{
+      
+      A_true_full=lapply(1:length(Prior), function(i) forwardTransform1(c(rnorm(1,
+                                                                                Prior[[i]]$pars$par.mu[1,1], # mean
+                                                                                Prior[[i]]$pars$par.mu[1,2]),# sd
+                                                                          rlnorm(1,
+                                                                                 Prior[[i]]$pars$par.mu[2,1],  # mean
+                                                                                 Prior[[i]]$pars$par.mu[2,2]))
+      ))
+      
+      
+      
+    #}
+    
+  }
+  
+  
+  
+  #check to see if you included ehight or not in mvBM, should expand to allow any comination of center,width, and height
+  
+  A_true_bt_full<-lapply( 1:length(Prior), function(i) backTransform1(A_true_full[[i]]))
+  
+  
+  if(nrow(R_true[[1]])==2){
+    
+    A_true<-lapply(1:length(Prior), function(i) A_true_full[[i]][1:2])
+    A_true_bt<-lapply(1:length(Prior), function(i) A_true_bt_full[[i]][1:2])
+    
+    true_dat_no_H <- lapply(1:length(Prior), function(i) mvMORPH::mvSIM(phylo, nsim = 1, param=list(ntraits=2, sigma=R_true[[i]][1:2,1:2], theta = A_true[[i]][1:2])))
+    sim_dat<- lapply(1:length(Prior), function(i) cbind(true_dat_no_H[[i]], as.numeric(seq(-2, -2, length.out=length(phylo$tip.label)))))
+    
+    if(is.null(hard_coded_heights)==F){
+      
+      for ( pred in 1:length(Prior)){
+        
+        
+        Y=((hard_coded_heights[[pred]]-.05)/.95)
+        FT_hard_coded_heights<- -1*log(Y/(1-Y))
+        
+        sim_dat[[pred]][,3]<-FT_hard_coded_heights
+      }
+      
+    }else{
+      
+      for ( pred in 1:length(Prior)){
+        
+        Y=((Prior[[pred]]$pars$heights-.05)/.95)
+        FT_height_means<- -1*log(Y/(1-Y))
+        
+        #sd is hardcoded at 0.15 for now, messy I know
+        sim_dat[[pred]][,3]<-rnorm(FT_height_means, 0.15)
+      
+      }
+      
+    }
+    
+    
+  } else if(nrow(R_true[[1]]==3)){
+    A_true<-lapply(1:length(Prior), function(i) A_true_full[[i]][1:3])
+    A_true_bt<-lapply(1:length(Prior), function(i) A_true_bt_full[[i]][1:3])
+    
+    true_dat<- lapply(1:length(Prior), function(i) mvMORPH::mvSIM(phylo, nsim = 1, param=list(ntraits=nrow(R_true[[i]]), sigma=R_true[[i]], theta=A_true[[i]])))
+    sim_dat<- lapply(1:length(Prior), function(i) cbind(true_dat[[i]]))
+    
+  }
+  
+  
+  
+  sim_dat_bt=lapply(1:length(sim_dat), function(x) t(apply(sim_dat[[x]], 1, backTransform1)))
+  
+  sim_td<-lapply(1:length(sim_dat), function(x) make.treedata(phylo, sim_dat[[x]])$dat)
+  
+  
+  sim_td_bt<-lapply(1:length(sim_dat_bt), function(x) make.treedata(phylo, sim_dat_bt[[x]])$dat)
+  
+  
+  
+  
+  
+  return(list( sim_dat=list(sim_dat_ft=sim_dat,
+                            sim_dat_bt=sim_dat_bt,
+                            sim_td=sim_td,
+                            sim_td_bt=sim_td_bt),
+               
+               A=list(A_ft=A_true,
+                      A_bt=A_true_bt),
+               
+               R=list(R=R_true,
+                      R_sd=R_sd_true,
+                      R_cor=R_cor_true )))
+  
+  
+  
+}
+
+
 
 findBadStart<- function(res, pa_data, plot=F){
 
@@ -817,14 +977,19 @@ MLglmStartpars_general = function(species_data, tree, height = NULL, buffer = FA
 }
 
 
-get_starting_values = function(Prior_scale, data, reps_before_POE=1000){
+#reps_before_POE=10
+get_starting_values = function(Prior_scale, tree, data, reps_before_POE=1000){
 
   GLM_only_ml<-suppressWarnings(MLglmStartpars_general(species_data = data,tree = tree, height = NULL))
 
   heights_glm<- lapply(GLM_only_ml$start_pars_bt, function(pred) pred[,3])
 
+
   
   for(pred in 1:length(heights_glm)){
+    
+    heights_glm[[pred]][is.na(heights_glm[[pred]])] = 0.5
+    
     less_than_tol_range    = heights_glm[[pred]] < 0.05
     greater_than_tol_range = heights_glm[[pred]] > 0.95
     
@@ -893,7 +1058,7 @@ get_starting_values = function(Prior_scale, data, reps_before_POE=1000){
       #break when no tip has a -inf likelihood
 
       #book keep which species are stille bad curves (both in terms of species name and row index in the response curve dataframe)
-      bad_names[[rep]]=names(heights_glm[[1]])[findBadStart(res=startPars_scaled[[i]]$sim_dat$sim_dat_bt, pa_data=data, plot=T)]
+      bad_names[[rep]]=names(heights_glm[[1]])[findBadStart(res=startPars_scaled[[i]]$sim_dat$sim_dat_bt, pa_data=data, plot=F)]
       bad_idx=findBadStart(res=startPars_scaled[[i]]$sim_dat$sim_dat_bt, pa_data=data, plot=T)
 
       #if none are bad starting values, break the loop, you are good to go! if not, keep going!

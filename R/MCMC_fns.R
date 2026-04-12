@@ -649,7 +649,7 @@ BePhyNE_MCMC= function (tree
   k=lapply(1:length(v), function(x) log(v[[x]]/(1-v[[x]])))
   
   
-  results<- metro_haste_full_MV(      R_corr_start   = startPars$R$R_cor
+  results<- metro_haste_full_MV(        R_corr_start = startPars$R$R_cor
                                       , R_sd_start   = startPars$R$R_sd
                                       , A_start      = startPars$A$A_bt
                                       , Prior= Prior_scale

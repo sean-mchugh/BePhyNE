@@ -83,13 +83,13 @@ data_final[[1]] \n
 
 ## Setting up the MCMC:Choose Your Priors
 
-Now that we have our dataset we can start the exciting task of setting our priors, we will inform our parameters with informative/weakly informative priors (entirely uninformative uniform priors can lead to some weird behavior especially for niche breadth and mvBM pars). "make_all_priors is preloaded with presetted values (explictly written out in the arguements). 
+Now that we have our dataset we can start the exciting task of setting our priors, we will inform our parameters with informative/weakly informative priors (entirely uninformative uniform priors can lead to some weird behavior especially for niche breadth and mvBM pars). "make_all_priors is preloaded with presetted values (explictly written out in the arguments). 
 
 
-Since tolerance are only estimated from the glm, we will put priors on each tip. with the mean being a max likelihood estimate for tolerance Note what we are doing here is a little janky/circular as we are using max likelihood GLM(NOTE) estimates as the means, this is just a weak prior to place it somewhere between .05 and .99. You could use a flat prior but it will result in BePhyNE taking much longer to mix.  
+Since tolerance are only estimated from the glm, each species has a separate prior for tolerance. Some option for setting these include using the max likelihood estimate for tolerance as the mean of the normal distribution, or a fixed prior across all species. For simplicity we apply a weak Normal prior with a mean of 0.95 on tolerance. You could use a flat prior but it will result in BePhyNE taking much longer to mix.  
 
 
-we do not believe this actually reflect prevalence, but instead error in sampling of the occurrences (broad scale gbif data) and generated absence data (using target group absences filtered to an equal number within the species IUCN expert range map and double the number of presences outside the expert range), see the pre print for details
+We do not believe this actually reflects prevalence, but instead error in sampling of the occurrences (broad scale gbif data) and generated absence data (using target group absences filtered to an equal number within the species IUCN expert range map and double the number of presences outside the expert range), see the pre print for details
 
 
 (NOTE) Generalized linear model: just the function we are fitting for each individual species response curve in PhyNE (logit(y) = B0 + B1 * X1 + B2 * X2)
@@ -129,7 +129,7 @@ Prior_scale = make_all_priors(Npred, length(tree$tip.label),
 To get start values we simulate parameters of our model, including individual species response curves and mvBM pars, however because we only can set what the mvBM pars are and the tip responses are subsequently simulated, we dont have a lot of control over what the tip values will be and some potential starting values could be so far off they cause the likelihood function to return nonsensical values, breaking the MCMC.
 
 ```{r message=FALSE, warning=FALSE, results= "hide"}
-startPars = get_starting_values(Prior_scale = Prior_scale, data = data_final)[[1]]
+startPars = get_starting_values(Prior_scale = Prior_scale, tree=tree,data = data_final)[[1]]
 
 ```
 
