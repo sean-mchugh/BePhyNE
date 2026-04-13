@@ -1073,8 +1073,8 @@ plot_response_curves <- function(tree,
     for (model_idx in seq_along(model_coefs)) {
       coefs <- model_coefs[[model_idx]][[pred_idx]]
       for (tip in 1:ntips) {
-        β <- coefs[tip, ]
-        yvals <- response_function(β[[1]] + β[[2]]*xseq + β[[3]]*xseq^2)
+        beta_coef <- coefs[tip, ]
+        yvals <- response_function(beta_coef[[1]] + beta_coef[[2]]*xseq + beta_coef[[3]]*xseq^2)
         
         if(!is.na(curve_fill_colors[[model_idx]])){
           polygon(xxp[yvals >.01], yvals[yvals > 0.01] + tip, col=curve_fill_colors[[model_idx]],density=NA,lwd=.5,border=curve_colors[[model_idx]])
