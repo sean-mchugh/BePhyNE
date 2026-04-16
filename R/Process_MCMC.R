@@ -35,17 +35,21 @@ logdf2traitsdf_list = function(logdf, transform2nichespace=T, logrows= 1:nrow(lo
       # Extract row and column from names like "pred_1_dat.traitXYZ"
       trait_df <- do.call(rbind, lapply(names(trait_mat), function(name) {
         num <- as.integer(gsub(".*trait", "", name))
-        if ( num<100){
-          col <- num %/% 10
-          row <- num %% 10
-        }else{
-          col <- num %/% 100
-          row <- num %% 100
-        }
-        if (row == 0) {
-          col <- col - 1
-          row <- 100
-        }
+        
+        col <-  num %/% 10^(floor(log10(num)))
+        row  <- num %% 10^(floor(log10(num)))
+        
+        #if ( num<100){
+        #  col <- num %/% 10
+        #  row <- num %% 10
+        #}else{
+        #  col <- num %/% 100
+        #  row <- num %% 100
+        #}
+        #if (row == 0) {
+        #  col <- col - 1
+        #  row <- 100
+        #}
         data.frame(row = row, col = col, value = trait_mat[[name]])
       }))
 
@@ -182,7 +186,7 @@ logdf2medians = function(logdf){
 
   medians = colMedians_df(logdf)
 
-  return(logdf2parlist(medians))
+  return(logdf2parlist(logdf = medians))
 
 
 }
@@ -197,10 +201,15 @@ summarize_logdf=function(logdf, HPD_prob=0.95){
 
   mcmc_median_df      = colMedians_df(logdf)
   mcmc_median_parlist = logdf2medians(logdf)
-
+  mcmc_HPDlower_parlist    = logdf2parlist(logdf = as.data.frame(t(mcmc_HPD[,1])))
+  mcmc_HPDupper_parlist    = logdf2parlist(logdf = as.data.frame(t(mcmc_HPD[,2])))
+  
+  
   summary = list(ESS = mcmc_ESS
                  ,HPD = mcmc_HPD
                  ,median_df = mcmc_median_df
                  ,median_parlist = mcmc_median_parlist
+                 ,HPDlower_parlist = mcmc_HPDlower_parlist 
+                 ,HPDupper_parlist = mcmc_HPDupper_parlist 
                  )
 }
