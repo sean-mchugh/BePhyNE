@@ -695,7 +695,24 @@ metro_haste_full_MV = function (R_corr_start, R_sd_start, A_start, Prior, tree, 
                                        function(x) prior[[x]]$corr.prior(current_vals[[1]][[1]][[x]]$R_cor))))
     prior.sd.lik = sum(unlist(lapply(1:length(current_vals[[1]][[1]]),
                                      function(x) prior[[x]]$sd.prior(current_vals[[1]][[1]][[x]]$R_sd))))
-    prior.heights.lik = lapply(1:length(current_vals[[1]][[1]]),
+   
+    #prior.heights.lik = lapply(1:length(current_vals[[1]][[1]]),
+      #                         function(pred) {
+      #                           lapply(1:length(pa_data), function(sp) {
+      #                             if (is.null(Prior[[pred]]$heights.prior) ==
+      #                                 F) {
+      #                               Prior[[pred]]$heights.prior[[sp]](dat.cur.bt[[pred]][sp,
+      #                                                                                    3])
+      #                             }
+      #                             else {
+      #                               0
+      #                             }
+      #                           })
+      #                         })
+    #
+    
+    
+     prior.heights.lik = lapply(1:length(current_vals[[1]][[1]]),
                                function(pred) {
                                  lapply(1:length(pa_data), function(sp) {
                                    if (is.null(Prior[[pred]]$heights.prior) ==
