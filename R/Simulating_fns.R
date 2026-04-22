@@ -380,7 +380,7 @@ priorSim_pars<-function(Prior, phylo, dist, hard_coded_heights=NULL){
         FT_height_means<- -1*log(Y/(1-Y))
         
         #sd is hardcoded at 0.15 for now, messy I know
-        sim_dat[[pred]][,3]<-rnorm(FT_height_means, 0.15)
+        sim_dat[[pred]][,3]<-rnorm(n=length(FT_height_means), mean = FT_height_means, sd = 0.15)
       
       }
       
@@ -978,9 +978,9 @@ MLglmStartpars_general = function(species_data, tree, height = NULL, buffer = FA
 
 
 #reps_before_POE=10
-get_starting_values = function(Prior_scale, tree, data, reps_before_POE=1000){
+get_starting_values = function(Prior_scale, tree, data, height=NULL, reps_before_POE=1000){
 
-  GLM_only_ml<-suppressWarnings(MLglmStartpars_general(species_data = data,tree = tree, height = NULL))
+  GLM_only_ml<-suppressWarnings(MLglmStartpars_general(species_data = data,tree = tree, height = height))
 
   heights_glm<- lapply(GLM_only_ml$start_pars_bt, function(pred) pred[,3])
 

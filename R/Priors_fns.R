@@ -57,7 +57,7 @@ find_max_heights<-function(data_list, pred, bin_num){
 
 
 
-makePrior_ENE<- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd, heights_by_sp=NULL, unif.corr=TRUE, Sigma=NULL, nu=NULL, plot=T){
+makePrior_ENE<- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd, heights_by_sp=NULL,  heights_sd=0.15, unif.corr=TRUE, Sigma=NULL, nu=NULL, plot=T){
   
   
   
@@ -259,19 +259,27 @@ makePrior_ENE<- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd, hei
     #height_priors=list()
     #making a list of functions rather than one big function so we can call the specific function we want only when the move on that par happens,
     #do we really need to calculate the prior for EVERY sp EVERY iteration...nah thats gonna slow the whole mcmc down so instead lets just do it when there is a proposal on that height
+    
+    
     height_priors<-lapply(1:length(FT_heights), function(sp){ force(FT_heights[[sp]]);
-      (function(x) dnorm(x, mean=FT_heights[[sp]], 0.15, log=T) )  })
+      (function(x) dnorm(x, mean=FT_heights[[sp]], heights_sd, log=T) )  })
+    
+  
+    if(plot==T){
+      plot_heights_ft  = stats::rnorm(10000, mean=FT_heights[[1]], sd = 0.15) 
+      plot_heights_bt  = 0.05 + 0.95 * (exp(-1 * plot_heights_ft )/(1 + exp(-1 * plot_heights_ft )))
+      plot(density(plot_heights_ft),    main=paste("heights_ft") )
+      plot(density( plot_heights_bt ), main=paste("heights_bt") )
+      if( is.null(heights_by_sp)==T){
+        
+        
+        plot(density(stats::rlnorm(10000, meanlog=par.sd[3,1], sdlog=par.sd[3,2]) ), main=paste("r_sd_h")  )
+        
+      }
+    }
     
     
   }
-  
-  
-  
-  
-  
-  
-  
-  
   
   res <- list(mean.prior=mn, corr.prior=corr, sd.prior=sd,  pars=pars, heights.prior=height_priors)
   class( res ) <- "prior_function"
@@ -296,6 +304,7 @@ make_all_priors <- function(
     sigsq_brdth_sdlog     = rep(0.5,      N),
     # ── heights (default hard‑coded) ─────────────────────────────
     heights_by_sp         = sample(.95, size = tips, replace = TRUE),
+    heights_sd            = 0.15,
     # ── constants forwarded to makePrior_ENE ─────────────────────
     r = 2, p = 1,
     plot = TRUE
@@ -343,6 +352,7 @@ make_all_priors <- function(
       r   = r,  p = p,
       den.mu = "norm",
       heights_by_sp = height_list[[i]],
+      heights_sd = heights_sd,
       par.mu = par_mu,
       den.sd = "lnorm",
       par.sd = par_sigsq,
