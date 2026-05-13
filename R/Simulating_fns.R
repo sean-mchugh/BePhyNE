@@ -1072,7 +1072,7 @@ get_starting_values = function(Prior_scale, tree, data, height=NULL, reps_before
     #startPars_scaled[[i]]$sim_dat$sim_dat_bt[[1]][,2] ==startPars_scaled[[i]]$sim_dat$sim_td_bt[[1]][,2]
   }
 
-  return(startPars_scaled)
+  return(startPars_scaled[[1]])
 }
 
 

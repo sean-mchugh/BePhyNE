@@ -32,7 +32,7 @@ lets install the package and
 
 ```{r echo=T, message=FALSE, results=F, warnings=F}
 library(devtools)
-devtools::install_github("sean-mchugh/BePhyNE")
+#devtools::install_github("sean-mchugh/BePhyNE")
 library(BePhyNE)
 
 
@@ -96,7 +96,8 @@ We do not believe this actually reflects prevalence, but instead error in sampli
 
 
 
-```{r}
+```{r, fig.width=14, fig.height=8, out.width="100%"}
+
 
 bd_range = c(0.1, 1.5)
 bd = bd_range[[2]] - bd_range[[1]]
@@ -128,8 +129,8 @@ Prior_scale = make_all_priors(Npred, length(tree$tip.label),
 
 To get start values we simulate parameters of our model, including individual species response curves and mvBM pars, however because we only can set what the mvBM pars are and the tip responses are subsequently simulated, we don't have a lot of control over what the tip values will be and some potential starting values could be so far off they cause the likelihood function to return nonsensical values, breaking the MCMC. So it may take a lot of trie (each iteration number printed out in console) to reach a set of "good" starting parameters. Sometimes it can be difficult to draw a set of good starting parameters from a single model draw, if that is the case, starting pars can be drawn for each remaining species with "bad" response curves using a process-of-elimination. This obviously is less ideal so we only do that if we fail at getting good starting parameters after a LOT of draws (in this case 1000), you can dial this however you like. 
 
-```{r message=FALSE, warning=FALSE, include=FALSE, results=}
-startPars = get_starting_values(Prior_scale = Prior_scale, tree=tree,data = data_final, reps_before_POE = 1000)[[1]]
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+startPars = get_starting_values(Prior_scale = Prior_scale, tree=tree,data = data_final, reps_before_POE = 1000)
 
 ```
 
@@ -197,7 +198,7 @@ log_summary = summarize_logdf(logdf)
 Now let plot what the posterior median response curves look like using ridge plot.
 
 
-```{r}
+```{r, fig.width=14, fig.height=8, out.width="100%"}
 
 plot_summary_ridgeplot (tree,
                         log_summary  ,  
@@ -216,7 +217,7 @@ plot_summary_ridgeplot (tree,
 
 We also now have ancestral state estimation included using Bruce Stagg Martin's excellent contsimmap package (much thanks to Bruce for helping get this working!). Currently for speed we set the number of sims to 10, but you will likely want many more (closer to 100-1k). When plotting, user you scale_atr from before to transform values back to climate space.
 
-```{r}
+```{r, fig.width=14, fig.height=8, out.width="100%"}
 
 #####stochastic character mapping################
 #not working great yet, can only plot characters in BM space, and cant o verwrite character values with nichespace characters
@@ -243,7 +244,7 @@ plot_BePhyNE_simmap(contsimmaps, scale_atr = scale_atr)
 
 Next you can do some model adequacy testing. predict_stats_list will generate a set of Receiver Operator Characteristic statistics, from which we can extract and plot area under the curve (AUC) stats per species. 
 
-```{r}
+```{r, fig.width=14, fig.height=8, out.width="100%"}
 
 #####AUC################
 
