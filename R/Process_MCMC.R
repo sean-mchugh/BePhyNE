@@ -77,6 +77,183 @@ logdf2traitsdf_list = function(logdf, transform2nichespace=T, logrows= 1:nrow(lo
 }
 
 
+logdf2traitsdf_list = function(logdf,
+                               transform2nichespace = TRUE,
+                               logrows = 1:nrow(logdf)) {
+  
+  predictors <- unique(
+    gsub("pred_(\\d+)_.*", "\\1",
+         grep("^pred_\\d+_", names(logdf), value = TRUE))
+  )
+  
+  traits_df_list = vector("list", length(predictors))
+  names(traits_df_list) = predictors
+  
+  count = 0
+  
+  for (x in logrows) {
+    
+    count = count + 1
+    
+    for (pred in predictors) {
+      
+      print(x)
+      
+      trait_cols <- grep(
+        paste0("^pred_", pred, "_dat\\."),
+        names(logdf),
+        value = TRUE
+      )
+      
+      trait_mat <- logdf[x, trait_cols, drop = FALSE]
+      
+      trait_df <- do.call(
+        rbind,
+        lapply(names(trait_mat), function(name) {
+          
+          # remove prefix
+          label <- sub(
+            paste0("^pred_", pred, "_dat\\."),
+            "",
+            name
+          )
+          
+          # split into trait + species
+          parts <- strsplit(label, "_", fixed = TRUE)[[1]]
+          
+          trait   <- parts[1]
+          species <- paste(parts[-1], collapse = "_")
+          
+          data.frame(
+            species = species,
+            trait   = trait,
+            value   = trait_mat[[name]],
+            stringsAsFactors = FALSE
+          )
+        })
+      )
+      
+      species_order <- unique(trait_df$species)
+      
+      trait_order <- c("opt", "brdth", "tol")
+      
+      trait_matrix <- matrix(
+        NA_real_,
+        nrow = length(species_order),
+        ncol = length(trait_order)
+      )
+      
+      rownames(trait_matrix) <- species_order
+      colnames(trait_matrix) <- trait_order
+      
+      for (i in seq_len(nrow(trait_df))) {
+        
+        r <- match(trait_df$species[i], species_order)
+        c <- match(trait_df$trait[i], trait_order)
+        
+        trait_matrix[r, c] <- trait_df$value[i]
+      }
+      
+      if (transform2nichespace) {
+        
+        BT_trait_matrix <- do.call(
+          rbind,
+          lapply(
+            seq_len(nrow(trait_matrix)),
+            function(i) backTransform1(trait_matrix[i, ])
+          )
+        )
+        
+        rownames(BT_trait_matrix) <- rownames(trait_matrix)
+        colnames(BT_trait_matrix) <- colnames(trait_matrix)
+        
+        traits_df_list[[pred]][[count]] <- BT_trait_matrix
+        
+      } else {
+        
+        traits_df_list[[pred]][[count]] <- trait_matrix
+      }
+    }
+  }
+  
+  return(traits_df_list)
+}
+
+
+logdf2traitsdf_list <- function(logdf,
+                                transform2nichespace = TRUE,
+                                logrows = seq_len(nrow(logdf))) {
+  
+  trait_order <- c("opt", "brdth", "tol")
+  
+  trait_cols <- grep("^pred_\\d+_dat\\.", names(logdf), value = TRUE)
+  
+  meta <- data.frame(
+    colname = trait_cols,
+    pred    = sub("^pred_(\\d+)_.*$", "\\1", trait_cols),
+    label   = sub("^pred_\\d+_dat\\.", "", trait_cols),
+    stringsAsFactors = FALSE
+  )
+  
+  meta$trait   <- sub("_.*$", "", meta$label)
+  meta$species <- sub("^[^_]+_", "", meta$label)
+  
+  predictors <- unique(meta$pred)
+  
+  traits_df_list <- setNames(vector("list", length(predictors)), predictors)
+  
+  for (pred in predictors) {
+    
+    meta_pred <- meta[meta$pred == pred, ]
+    
+    species_order <- unique(meta_pred$species)
+    
+    wanted <- expand.grid(
+      trait = trait_order,
+      species = species_order,
+      stringsAsFactors = FALSE
+    )
+    
+    wanted$colname <- paste0(
+      "pred_", pred, "_dat.",
+      wanted$trait, "_",
+      wanted$species
+    )
+    
+    col_order <- match(wanted$colname, names(logdf))
+    
+    mat <- as.matrix(logdf[logrows, col_order, drop = FALSE])
+    
+    traits_df_list[[pred]] <- lapply(seq_len(nrow(mat)), function(i) {
+      
+      out <- matrix(
+        mat[i, ],
+        nrow = length(species_order),
+        ncol = length(trait_order),
+        byrow = FALSE,
+        dimnames = list(species_order, trait_order)
+      )
+      
+      if (transform2nichespace) {
+        out <- do.call(
+          rbind,
+          lapply(seq_len(nrow(out)), function(j) {
+            backTransform1(out[j, ])
+          })
+        )
+        
+        rownames(out) <- species_order
+        colnames(out) <- trait_order
+      }
+      
+      out
+    })
+  }
+  
+  return(traits_df_list)
+}
+
+
 
 logdf2R_list = function(logdf, logrows= 1:nrow(logdf)){
 
@@ -184,9 +361,9 @@ logdf2parlist = function(logdf, transform2nichespace=T, logrows= 1:nrow(logdf)){
 
 logdf2medians = function(logdf){
 
-  medians = colMedians_df(logdf)
+  medians = colMedians_df(df = logdf)
 
-  return(logdf2parlist(logdf = medians))
+  return(logdf2parlist(logdf = medians, logrows = nrow(medians)))
 
 
 }
@@ -199,8 +376,8 @@ summarize_logdf=function(logdf, HPD_prob=0.95){
   mcmc_ESS = effectiveSize(mcmc_obj)
   mcmc_HPD = HPDinterval(mcmc_obj, prob = HPD_prob)
 
-  mcmc_median_df      = colMedians_df(logdf)
-  mcmc_median_parlist = logdf2medians(logdf)
+  mcmc_median_df      = colMedians_df(df = logdf)
+  mcmc_median_parlist = logdf2medians(logdf = logdf)
   mcmc_HPDlower_parlist    = logdf2parlist(logdf = as.data.frame(t(mcmc_HPD[,1])))
   mcmc_HPDupper_parlist    = logdf2parlist(logdf = as.data.frame(t(mcmc_HPD[,2])))
   

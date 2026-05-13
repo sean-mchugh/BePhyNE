@@ -752,7 +752,6 @@ plotTraces<-function(trimmed_chain, plot.true=T, True_pars){
 
 
 
-
 PlotBePhyNEchains<-function(mcmc_object, dir=NA, name="BePhyNE", traces=T, densities=T){
   
   

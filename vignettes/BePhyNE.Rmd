@@ -142,6 +142,7 @@ Next you need to set your tuning parameters, how often do we want to be making p
 ```{r}
 
 move_details = make_tuning(tree = tree, pred = Npred)
+
 ```
 
 
@@ -170,7 +171,7 @@ results = BePhyNE_MCMC(tree
                        ,iterations = iterations
                        ,trim_freq  = trim_freq
                        ,write2file = T
-                       ,append2existingfile = F
+                       ,append2existingfile = T
                        ,filename
 )
 
@@ -227,10 +228,11 @@ library(contsimmap)
 
 char_names = c("bio12_optimum","bio12_breadth",
                "bio1_optimum","bio1_breadth")
-contsimmaps = make_simmaps_BePhyNE( tree, 
-                                   logdf,
-                                   nsims = 10
-                                   ,char_names= char_names
+
+contsimmaps = make_simmaps_BePhyNE( tree = tree
+                                   , logdf = logdf
+                                   , nsims      = 10
+                                   , char_names = char_names
                                     )
 
 
