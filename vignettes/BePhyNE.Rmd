@@ -98,7 +98,7 @@ We do not believe this actually reflects prevalence, but instead error in sampli
 
 ```{r}
 
- bd_range = c(0.1, 1.5)
+bd_range = c(0.1, 1.5)
 bd = bd_range[[2]] - bd_range[[1]]
 
 Prior_scale = make_all_priors(Npred, length(tree$tip.label),
@@ -126,17 +126,17 @@ Prior_scale = make_all_priors(Npred, length(tree$tip.label),
 
 ## Setting up the MCMC:Choose Your Starting Values
 
-To get start values we simulate parameters of our model, including individual species response curves and mvBM pars, however because we only can set what the mvBM pars are and the tip responses are subsequently simulated, we dont have a lot of control over what the tip values will be and some potential starting values could be so far off they cause the likelihood function to return nonsensical values, breaking the MCMC.
+To get start values we simulate parameters of our model, including individual species response curves and mvBM pars, however because we only can set what the mvBM pars are and the tip responses are subsequently simulated, we don't have a lot of control over what the tip values will be and some potential starting values could be so far off they cause the likelihood function to return nonsensical values, breaking the MCMC. So it may take a lot of trie (each iteration number printed out in console) to reach a set of "good" starting parameters. Sometimes it can be difficult to draw a set of good starting parameters from a single model draw, if that is the case, starting pars can be drawn for each remaining species with "bad" response curves using a process-of-elimination. This obviously is less ideal so we only do that if we fail at getting good starting parameters after a LOT of draws (in this case 1000), you can dial this however you like. 
 
-```{r message=FALSE, warning=FALSE, results= "hide"}
-startPars = get_starting_values(Prior_scale = Prior_scale, tree=tree,data = data_final)[[1]]
+```{r message=FALSE, warning=FALSE, include=FALSE, results=}
+startPars = get_starting_values(Prior_scale = Prior_scale, tree=tree,data = data_final, reps_before_POE = 1000)[[1]]
 
 ```
 
 
 ## Setting up the MCMC:Choose Your Tuning Parameters
 
-Next you need to set your tuning parameters, how often do we want to be making proposals on any specific parameter, we set these through trial and error on our scaled predictors, each tip response par and mvBM par has its own tuning par in this setup, each response curve proposal type (center_lide, center_mult, width_slide, etc) has its own tuning par 
+Next you need to set your tuning parameters, how often do we want to be making proposals on any specific parameter, we set these through trial and error on our scaled predictors, each tip response par and mvBM par has its own tuning par in this setup, each response curve proposal type (center_lide, center_mult, width_slide, etc) has its own tuning parameter. Many of these are set to what we found to be "reasonable" but one can set these however they like, set to lower values if you find that you have poorly mixing changes with many big jumps and few accepted proposals, and set to higher values if MCMC chains look autocorrelated across samples.  
 
 
 ```{r}
@@ -150,14 +150,14 @@ move_details = make_tuning(tree = tree, pred = Npred)
 
 Now you have all of the pieces to run the MCMC, you have an option to either write the MCMC to a file or store the chain as a giant list of lists. We recommend writing to a file and subsequent post porocessing code will be for outputs from the written log files. 
 
-An added benefit to writing the MCMc to file is the outputted log files can be read by user-friendly software such as Tracer. 
+An added benefit to writing the MCMC to file is the outputted log files can be read by user-friendly software such as Tracer. 
 
-```{r message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 #  
 
 sparse_sp=F
-iterations=1000
-trim_freq= iterations/1000
+iterations=100
+trim_freq= iterations/100
 burnin=0
 chain_end=(iterations-(burnin))/trim_freq
 filename="~/Downloads/BePhyNE_demo"
@@ -170,6 +170,7 @@ results = BePhyNE_MCMC(tree
                        ,iterations = iterations
                        ,trim_freq  = trim_freq
                        ,write2file = T
+                       ,append2existingfile = F
                        ,filename
 )
 

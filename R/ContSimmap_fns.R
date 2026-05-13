@@ -7,7 +7,7 @@ make_simmaps_BePhyNE=function( tree,
                                char_names =NA, 
                                nsims = 10){
   
-  parlist = logdf2parlist(logdf, transform2nichespace = F, logrows = sample(1:nrow(logdf),nsims))
+  parlist = logdf2parlist(logdf, transform2nichespace = F, logrows = sample(1:nrow(logdf), nsims))
   
   if(sum(is.na(char_names))==1){
     

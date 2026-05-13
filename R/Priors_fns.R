@@ -266,7 +266,7 @@ makePrior_ENE<- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd, hei
     
   
     if(plot==T){
-      plot_heights_ft  = stats::rnorm(10000, mean=FT_heights[[1]], sd = 0.15) 
+      plot_heights_ft  = stats::rnorm(10000, mean=FT_heights[[1]], sd =  heights_sd) 
       plot_heights_bt  = 0.05 + 0.95 * (exp(-1 * plot_heights_ft )/(1 + exp(-1 * plot_heights_ft )))
       plot(density(plot_heights_ft),    main=paste("heights_ft") )
       plot(density( plot_heights_bt ), main=paste("heights_bt") )

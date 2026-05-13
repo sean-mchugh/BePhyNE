@@ -205,7 +205,7 @@ summarize_logdf=function(logdf, HPD_prob=0.95){
   mcmc_HPDupper_parlist    = logdf2parlist(logdf = as.data.frame(t(mcmc_HPD[,2])))
   
   
-  summary = list(ESS = mcmc_ESS
+  summary = list( ESS = mcmc_ESS
                  ,HPD = mcmc_HPD
                  ,median_df = mcmc_median_df
                  ,median_parlist = mcmc_median_parlist
