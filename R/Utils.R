@@ -3,34 +3,40 @@
 
 '%!in%' <- function(x,y)!('%in%'(x,y))
 
-format_BePhyNE_data = function(pa_data, tree, sp_col, occ_col, env_preds, scale_atr=NA){
+format_BePhyNE_data = function(pa_data, tree, sp_col, occ_col, env_preds, scale_atr=NA, normalize_data=T){
 
   pres_data_scaled= pa_data
 
-  if( sum(is.na(scale_atr))>0){
-    scaled_climate = scale(pa_data[,env_preds])
-
-    pres_data_scaled[,env_preds]= scaled_climate[,env_preds]
-
-    scale_atr <- list(scale=lapply(env_preds, function(pred)(attr(scaled_climate , "scaled:scale")[colnames(scaled_climate)==pred])),
-                      center= lapply(env_preds, function(pred) (attr(scaled_climate,  "scaled:center")[colnames(scaled_climate)==pred]))
-    )
-
-    names(scale_atr$scale) = env_preds
-    names(scale_atr$center) = env_preds
-
-
-  } else{
-
-
-    scaled_climate = do.call(cbind ,lapply(env_preds, function(pred) (pa_data[,pred]-scale_atr$center[[pred]])/scale_atr$scale[[pred]]) )
-
-    colnames(scaled_climate) = env_preds
-
-    pres_data_scaled[,env_preds]= scaled_climate[,env_preds]
-
+  if(normalize_data==T){
+    if( sum(is.na(scale_atr))>0){
+      scaled_climate = scale(pa_data[,env_preds])
+  
+      pres_data_scaled[,env_preds]= scaled_climate[,env_preds]
+  
+      scale_atr <- list(scale=lapply(env_preds, function(pred)(attr(scaled_climate , "scaled:scale")[colnames(scaled_climate)==pred])),
+                        center= lapply(env_preds, function(pred) (attr(scaled_climate,  "scaled:center")[colnames(scaled_climate)==pred]))
+      )
+  
+      names(scale_atr$scale) = env_preds
+      names(scale_atr$center) = env_preds
+  
+  
+    } else{
+  
+  
+      scaled_climate = do.call(cbind ,lapply(env_preds, function(pred) (pa_data[,pred]-scale_atr$center[[pred]])/scale_atr$scale[[pred]]) )
+  
+      colnames(scaled_climate) = env_preds
+  
+      pres_data_scaled[,env_preds]= scaled_climate[,env_preds]
+  
+    }
+    
+  }else{
+    
+    scale_atr = NA
   }
-
+  
   data_final <- lapply(split(pres_data_scaled[c(occ_col, env_preds)],pres_data_scaled[sp_col]), as.list)
   #replace vector of species names with a single name
   data_final_tree = list()
