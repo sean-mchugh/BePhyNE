@@ -616,14 +616,6 @@ MLglmStartpars<-function(species_data, tree, height=NULL, buffer=F){
   #starting.X1 = lapply(not_missing_data, function(species) glm(yy[[species]] ~ X1[[species]] + I(X1[[species]]^2), family=binomial) ) #This is a null model
   #starting.X2 = lapply(not_missing_data, function(species) glm(yy[[species]] ~ X2[[species]] + I(X2[[species]]^2), family=binomial) )#This is a null model
   
-  for(species in 1:length(tree$tip.label)){
-    
-    sp_coefs = traits2coefs_sp(c(0,1,0.5))
-    
-    if( c(class(starting.X1) == "try-error")
-    
-  }
-  
   res_new<-list(
     do.call(rbind, lapply(1:length(tree$tip.label), function(species) coef2traits(starting.X1[[species]]$coefficients)))
     ,do.call(rbind, lapply(1:length(tree$tip.label), function(species) coef2traits(starting.X2[[species]]$coefficients)))
