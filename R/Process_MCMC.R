@@ -11,7 +11,7 @@ colMedians_df <- function(df) {
 }
 
 
-logdf2traitsdf_list = function(logdf, transform2nichespace=T, logrows= 1:nrow(logdf)){
+logdf2traitsdf_list = function(logdf, transform2nichespace=F, logrows= 1:nrow(logdf)){
 
   predictors <- unique(gsub("pred_(\\d+)_.*", "\\1", grep("^pred_\\d+_", names(logdf), value = TRUE)))
   pred_prefix <- paste0("pred_", predictors, "_")
@@ -79,7 +79,7 @@ logdf2traitsdf_list = function(logdf, transform2nichespace=T, logrows= 1:nrow(lo
 
 
 logdf2traitsdf_list <- function(logdf,
-                                transform2nichespace = TRUE,
+                                transform2nichespace = F,
                                 logrows = seq_len(nrow(logdf))) {
   
   trait_order <- c("opt", "brdth", "tol")
@@ -205,7 +205,7 @@ logdf2R_list = function(logdf, logrows= 1:nrow(logdf)){
 }
 
 
-logdf2A_list = function(logdf, transform2nichespace=T, logrows= 1:nrow(logdf)){
+logdf2A_list = function(logdf, transform2nichespace=F, logrows= 1:nrow(logdf)){
 
   predictors <- unique(gsub("pred_(\\d+)_.*", "\\1", grep("^pred_\\d+_", names(logdf), value = TRUE)))
 
@@ -236,7 +236,7 @@ logdf2A_list = function(logdf, transform2nichespace=T, logrows= 1:nrow(logdf)){
 }
 
 
-logdf2parlist = function(logdf, transform2nichespace=T, logrows= 1:nrow(logdf)){
+logdf2parlist = function(logdf, transform2nichespace=F, logrows= 1:nrow(logdf)){
 
   traits_list = logdf2traitsdf_list(logdf, transform2nichespace, logrows)
 
@@ -267,8 +267,7 @@ logdf2medians = function(logdf){
 }
 
 
-
-summarize_logdf=function(logdf, HPD_prob=0.95){
+summarize_logdf=function(logdf, HPD_prob=0.95,scale_atr=NA){
   
   mcmc_obj = coda::as.mcmc(logdf[,-1])
   mcmc_ESS = effectiveSize(mcmc_obj)
@@ -287,4 +286,11 @@ summarize_logdf=function(logdf, HPD_prob=0.95){
                  ,HPDlower_parlist = mcmc_HPDlower_parlist 
                  ,HPDupper_parlist = mcmc_HPDupper_parlist 
                  )
+  
+  summary = backtransform_denormalize_logsummary(summary,scale_atr = scale_atr)
+  
+  return(summary)
 }
+
+
+

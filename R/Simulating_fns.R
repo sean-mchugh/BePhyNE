@@ -428,7 +428,8 @@ priorSim_pars<-function(Prior, phylo, dist, hard_coded_heights=NULL){
 
 
 findBadStart<- function(res, pa_data, plot=F){
-
+  
+  
   betas <- lapply(1:length(res), function(x) traits2coefs(res[[x]])) # Convert to beta coefficients
 
   yy = lapply( 1:nrow(res[[1]]), function(i) (betas[[1]][i,1] + betas[[1]][i,2]*pa_data[[i]]$X1+ betas[[1]][i,3]*(pa_data[[i]]$X1^2) + (betas[[2]][i,1] + betas[[2]][i,2]*pa_data[[i]]$X2+ betas[[2]][i,3]*(pa_data[[i]]$X2^2) )))
@@ -444,6 +445,37 @@ findBadStart<- function(res, pa_data, plot=F){
   return(inf)
 
 }
+
+
+findBadStart<- function(res, pa_data, plot=F){
+  
+  not_miss=unlist(lapply(1:length(pa_data), function(sp) if(any(is.na(pa_data[[sp]]$y))!=T){sp} ))
+  #save vector of which list entries contain data and which dont
+  
+  #placeholder
+  sumlikelihood = lapply(1:length(pa_data),function(sp) 0 )
+  
+  
+  for(i in not_miss){
+    
+    betas <- lapply( 1:length(res), function(x) traits2coefs(res[[x]][i,])) # Convert to beta coefficients
+    
+    yy =  (betas[[1]][,1] + betas[[1]][,2]*pa_data[[i]]$X1+ betas[[1]][1,3]*(pa_data[[i]]$X1^2) + (betas[[2]][1,1] + betas[[2]][1,2]*pa_data[[i]]$X2+ betas[[2]][1,3]*(pa_data[[i]]$X2^2) ))
+    
+    presProb <- 1/(1+exp(-1*yy)) 
+    
+    likelihood=   dbinom(pa_data[[i]]$y,1,prob=presProb,log=T)
+    sumlikelihood[[i]]=  sum(likelihood)
+    
+  }
+  
+  ##identify which species have -inf starting params
+  inf<-(1:length(sumlikelihood))[sumlikelihood==-Inf]
+  
+  return(inf)
+  
+}
+
 
 
 findStart<-function(res, pa_data, tree, plot=F){
@@ -575,15 +607,23 @@ MLglmStartpars<-function(species_data, tree, height=NULL, buffer=F){
   yy <- lapply(1:length(tree$tip.label), function(species) species_data[[species]]$y)
   X1 <- lapply(1:length(tree$tip.label), function(species) species_data[[species]]$X1 )
   X2 <- lapply(1:length(tree$tip.label), function(species) species_data[[species]]$X2 )
-  starting.X1 = lapply(1:length(tree$tip.label), function(species) glm(yy[[species]] ~ X1[[species]] + I(X1[[species]]^2), family=binomial) ) #This is a null model
+  
+  not_missing_data = which(unlist(lapply(yy, function(sp) !any(is.na(sp)))))
+  
+  starting.X1 = lapply(1:length(tree$tip.label), function(species) try(glm(yy[[species]] ~ X1[[species]] + I(X1[[species]]^2), family=binomial)) ) #This is a null model
+  starting.X2 = lapply(1:length(tree$tip.label), function(species) try(glm(yy[[species]] ~ X2[[species]] + I(X2[[species]]^2), family=binomial)) )#This is a null model
 
-
-  #plot(X1[[62]], starting.X1[[62]]$fitted.values)
-
-  #res_new[[2]][42,]
-
-  starting.X2 = lapply(1:length(tree$tip.label), function(species) glm(yy[[species]] ~ X2[[species]] + I(X2[[species]]^2), family=binomial) )#This is a null model
-
+  #starting.X1 = lapply(not_missing_data, function(species) glm(yy[[species]] ~ X1[[species]] + I(X1[[species]]^2), family=binomial) ) #This is a null model
+  #starting.X2 = lapply(not_missing_data, function(species) glm(yy[[species]] ~ X2[[species]] + I(X2[[species]]^2), family=binomial) )#This is a null model
+  
+  for(species in 1:length(tree$tip.label)){
+    
+    sp_coefs = traits2coefs_sp(c(0,1,0.5))
+    
+    if( c(class(starting.X1) == "try-error")
+    
+  }
+  
   res_new<-list(
     do.call(rbind, lapply(1:length(tree$tip.label), function(species) coef2traits(starting.X1[[species]]$coefficients)))
     ,do.call(rbind, lapply(1:length(tree$tip.label), function(species) coef2traits(starting.X2[[species]]$coefficients)))
@@ -976,6 +1016,78 @@ MLglmStartpars_general = function(species_data, tree, height = NULL, buffer = FA
   ))
 }
 
+MLglmStartpars_general <- function(species_data, tree, height = NULL, buffer = FALSE) {
+  n_species <- length(tree$tip.label)
+  
+  fallback_coefs <- traits2coefs_sp(c(0, 1, 0.5))
+  
+  x_names <- names(species_data[[1]])
+  x_vars <- grep("^X[0-9]+$", x_names, value = TRUE)
+  nx <- length(x_vars)
+  
+  yy <- lapply(1:n_species, function(i) species_data[[i]]$y)
+  XX <- lapply(x_vars, function(xn) {
+    lapply(1:n_species, function(i) species_data[[i]][[xn]])
+  })
+  
+  starting_models <- lapply(1:nx, function(xi) {
+    lapply(1:n_species, function(i) {
+      tryCatch(
+        glm(yy[[i]] ~ XX[[xi]][[i]] + I(XX[[xi]][[i]]^2), family = binomial),
+        error = function(e) NULL
+      )
+    })
+  })
+  
+  res_new <- lapply(1:nx, function(xi) {
+    do.call(rbind, lapply(1:n_species, function(i) {
+      if (is.null(starting_models[[xi]][[i]])) {
+        coef2traits(fallback_coefs)
+      } else {
+        coef2traits(starting_models[[xi]][[i]]$coefficients)
+      }
+    }))
+  })
+  
+  if (!is.null(height)) {
+    for (x in 1:nx) {
+      res_new[[x]][, 3] <- height
+    }
+  }
+  
+  for (x in 1:nx) {
+    rownames(res_new[[x]]) <- tree$tip.label
+  }
+  
+  if (buffer) {
+    for (i in 1:n_species) {
+      for (xi in 1:nx) {
+        X_vals <- species_data[[i]][[x_vars[xi]]][species_data[[i]]$y == 1]
+        
+        if (length(X_vals) > 0 && all(is.finite(X_vals))) {
+          if (abs(res_new[[xi]][i, 1]) > 4) {
+            res_new[[xi]][i, 1] <- median(X_vals)
+          }
+          
+          if (abs(res_new[[xi]][i, 2]) > 4) {
+            res_new[[xi]][i, 2] <- diff(range(X_vals))
+          }
+        }
+      }
+    }
+  }
+  
+  res_ft_new    <- lapply(res_new, function(mat) t(apply(mat, 1, forwardTransform1)))
+  res_td_new    <- lapply(res_ft_new, function(mat) make.treedata(tree, mat)$dat)
+  res_td_bt_new <- lapply(res_new, function(mat) make.treedata(tree, mat)$dat)
+  
+  list(
+    start_pars_bt = res_new,
+    start_pars_ft = res_ft_new,
+    start_td = res_td_new,
+    start_td_bt = res_td_bt_new
+  )
+}
 
 #reps_before_POE=10
 get_starting_values = function(Prior_scale, tree, data, height=NULL, reps_before_POE=1000){

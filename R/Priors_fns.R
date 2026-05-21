@@ -305,6 +305,9 @@ make_all_priors <- function(
     # ── heights (default hard‑coded) ─────────────────────────────
     heights_by_sp         = sample(.95, size = tips, replace = TRUE),
     heights_sd            = 0.15,
+    use_glm_height_mean   = F,
+    species_data          = NA,
+    tree                  = NA,
     # ── constants forwarded to makePrior_ENE ─────────────────────
     r = 2, p = 1,
     plot = TRUE
@@ -325,6 +328,12 @@ make_all_priors <- function(
       sigsq_brdth_meanlog   = rep(log(bd),  N)
       
     }
+  }
+  
+  if(use_glm_height_mean){
+    
+    GLM_only_ml   <-MLglmStartpars_general(species_data = species_data, tree = tree, height = NULL)
+    heights_by_sp <- GLM_only_ml$start_pars_bt[[1]][,3]
   }
   
   ## 0. Coerce heights into a list of length N ------------------
@@ -348,10 +357,12 @@ make_all_priors <- function(
                           sigsq_brdth_meanlog[i], sigsq_brdth_sdlog[i]),
                         nrow = 2, byrow = TRUE)
     
+    
+    
     makePrior_ENE(
       r   = r,  p = p,
       den.mu = "norm",
-      heights_by_sp = height_list[[i]],
+      heights_by_sp = height_list[[1]],
       heights_sd = heights_sd,
       par.mu = par_mu,
       den.sd = "lnorm",

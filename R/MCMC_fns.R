@@ -414,7 +414,9 @@ metro_haste_full_MV = function (R_corr_start, R_sd_start, A_start, Prior, tree, 
                                                            n, current_vals[[1]][[1]][[x]]$curr.jac, w_sd = w_sd[[x]]$slide))
       move = "R_sd"
       if (is.null(proposal) == T) {
-        print("Your matrix is fucked yo, this is the signularity error")
+        print("Null proposal Your matrix is broken, this is the signularity error")
+        
+        #print("Your matrix is broken, this is the signularity error")
         if (trim == TRUE) {
           return(list(acceptances = acceptances, accepted.moves = list(A.dat.bm.moves = A.dat.bm.moves,
                                                                        A.dat.slide.moves = A.dat.slide.moves, A.dat.mult.moves = A.dat.mult.moves,
@@ -450,7 +452,7 @@ metro_haste_full_MV = function (R_corr_start, R_sd_start, A_start, Prior, tree, 
                                      pa_data, tree, prior, prop, k, prior_only = prior_only,
                                      glm_only = glm_only)
     if (is.na(probab$a.ratio)) {
-      cat(red("NA acceptance ratio ", i + 1, " ", current_vals[[1]][[2]]$move,
+      cat(paste0("NA acceptance ratio " , i + 1, " ", current_vals[[1]][[2]]$move,
               "\n"))
       NA_moves = NA_moves + 1
       if (move == "Center_Multiplier") {
@@ -718,6 +720,19 @@ metro_haste_full_MV = function (R_corr_start, R_sd_start, A_start, Prior, tree, 
 #trim_freq = 1
 #write2file = F
 #filename = paste0("Height_runs/",ID,".log")#
+
+
+#tree
+#pa_data = data_final_miss
+#Prior_scale
+#startPars
+#move_details
+#iterations = iterations
+#trim_freq = trim_freq
+#write2file = TRUE
+#append2existingfile = F
+#filename
+
 
 BePhyNE_MCMC= function (tree
                         ,pa_data 

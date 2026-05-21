@@ -22,7 +22,8 @@ GLM_Likelihood_MV_fn <- function(res, full_pa_data, k){
   #td<-prop_traits_only
 
   #identify missing by if the first pa_point is NA (Do not have NAs unless there is no data for that sp)
-  miss=unlist(lapply(1:length(full_pa_data), function(sp) if(is.na(full_pa_data[[sp]]$y[[1]])==T){sp} ))
+  #changed instead of first element, if any elements are NA
+  miss=unlist(lapply(1:length(full_pa_data), function(sp) if(any(is.na(full_pa_data[[sp]]$y))==T){sp} ))
   #save vector of which list entries contain data and which dont
   sp_dat<-(1:length(full_pa_data))[(1:length(full_pa_data))!=miss]
 
@@ -201,6 +202,8 @@ acceptance_ratio_MV_fun<-function(proposal, current_vals, pa_data, tree, prior, 
 
 
 
+      #note!!! this WAS wrong you were calculating prior on backtransformed heights, not forward transformed!!!
+      # now it is calculated on the correct height 
       prop.prior.height<-lapply(1:length(proposal), function(pred){
 
         lapply(missSP, function(sp){
@@ -209,7 +212,7 @@ acceptance_ratio_MV_fun<-function(proposal, current_vals, pa_data, tree, prior, 
 
             prior[[pred]]$heights.prior[[sp]](as.numeric(dat.prop[[pred]][sp,3]))
           }else{
-            0
+             xxxxxxx
           }}
         )  }
       )
