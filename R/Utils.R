@@ -47,6 +47,15 @@ format_BePhyNE_data = function(pa_data, tree, sp_col, occ_col, env_preds, scale_
     data_final[[sp_name]] = data_final[[sp_name]][c(sp_col, occ_col, env_preds)]
     names( data_final[[sp_name]]) =c("species", "y", paste0("X", 1:(length(names( data_final[[sp_name]]))-2)) )
 
+    if(is.na(data_final[[sp_name]]$species)){
+      data_final[[sp_name]]$species= sp_name
+     for(x in 2:length(data_final[[sp_name]])) {
+       data_final[[sp_name]][[x]]=NA
+       
+     }
+      
+    }
+    
     data_final_tree[[sp_name]] = data_final[[sp_name]]
   }
 
