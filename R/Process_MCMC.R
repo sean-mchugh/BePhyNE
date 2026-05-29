@@ -10,6 +10,63 @@ colMedians_df <- function(df) {
   as.data.frame(t(medians), stringsAsFactors = FALSE)
 }
 
+one_row_to_pred_list <- function(x, exp_breadth = FALSE) {
+  
+  x <- as.data.frame(x, check.names = FALSE)
+  
+  cn <- colnames(x)
+  
+  pred_ids <- unique(sub("^(pred_[0-9]+)_dat\\..*$", "\\1",
+                         grep("^pred_[0-9]+_dat\\.", cn, value = TRUE)))
+  
+  out <- lapply(pred_ids, function(pred) {
+    
+    opt_cols <- grep(paste0("^", pred, "_dat\\.opt_"), cn, value = TRUE)
+    brd_cols <- grep(paste0("^", pred, "_dat\\.brdth_"), cn, value = TRUE)
+    tol_cols <- grep(paste0("^", pred, "_dat\\.tol_"), cn, value = TRUE)
+    
+    species <- sub(paste0("^", pred, "_dat\\.opt_"), "", opt_cols)
+    
+    opt <- as.numeric(x[1, opt_cols])
+    brd <- as.numeric(x[1, brd_cols])
+    tol <- as.numeric(x[1, tol_cols])
+    
+    if (exp_breadth) {
+      brd <- exp(brd)
+    }
+    
+    names(opt) <- species
+    names(brd) <- species
+    names(tol) <- species
+    
+    list(
+      optimum = opt,
+      breadth = brd,
+      tolerance = tol
+    )
+  })
+  
+  names(out) <- pred_ids
+  
+  out
+}
+
+mat_to_traits <- function(mat) {
+  
+  cn <- colnames(mat)
+  
+  preds <- unique(sub("_(opt|brdth|tol)$", "", cn))
+  
+  lapply(preds, function(p) {
+    list(
+      optimum   = mat[1, paste0(p, "_opt")],
+      breadth   = mat[1, paste0(p, "_brdth")],
+      tolerance = mat[1, paste0(p, "_tol")]
+    )
+  }) |>
+    setNames(preds)
+}
+
 
 logdf2traitsdf_list = function(logdf, transform2nichespace=F, logrows= 1:nrow(logdf)){
 
@@ -128,7 +185,7 @@ logdf2traitsdf_list <- function(logdf,
         mat[i, ],
         nrow = length(species_order),
         ncol = length(trait_order),
-        byrow = FALSE,
+        byrow = T,
         dimnames = list(species_order, trait_order)
       )
       
@@ -269,12 +326,27 @@ logdf2medians = function(logdf){
 
 summarize_logdf=function(logdf, HPD_prob=0.95,scale_atr=NA){
   
+  
+  predictors <- unique(gsub("pred_(\\d+)_.*", "\\1", grep("^pred_\\d+_", names(logdf), value = TRUE)))
+  
   mcmc_obj = coda::as.mcmc(logdf[,-1])
   mcmc_ESS = effectiveSize(mcmc_obj)
   mcmc_HPD = HPDinterval(mcmc_obj, prob = HPD_prob)
 
   mcmc_median_df      = colMedians_df(df = logdf)
-  mcmc_median_parlist = logdf2medians(logdf = logdf)
+  
+
+  for(pred in predictors){
+    
+    pred_prefix <- paste0("pred_", pred, "_")
+    
+    A_cols <- grep(paste0("^", pred_prefix, "A\\d+"), names(logdf), value = TRUE)
+
+    mcmc_median_df[A_cols]  = backTransform1(unlist(c(mcmc_median_df[A_cols],1) ))[1:2]
+  }
+
+  
+  mcmc_median_parlist      =  logdf2medians(logdf = logdf)
   mcmc_HPDlower_parlist    = logdf2parlist(logdf = as.data.frame(t(mcmc_HPD[,1])))
   mcmc_HPDupper_parlist    = logdf2parlist(logdf = as.data.frame(t(mcmc_HPD[,2])))
   
