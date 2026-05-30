@@ -133,6 +133,9 @@ assess.predict = function(presProb, plot=F){
 }
 
 
+library(pROC)
+
+
 predict_stats  = function(traits, pa_data){
   
   sp_names = unlist(lapply(pa_data, function(i) i$species))
@@ -142,6 +145,30 @@ predict_stats  = function(traits, pa_data){
   predict_list =  lapply(1:length(presProb), function(i) {
     #print(i)
     assess.predict(presProb[[i]])
+  }
+  )
+  
+  names(predict_list) = sp_names
+  
+  return(predict_list)
+  
+}
+
+
+
+predict_stats  = function(traits, pa_data){
+  
+  sp_names = unlist(lapply(pa_data, function(i) i$species))
+  
+  presProb = predict.ENE(traits, pa_data)
+  
+  predict_list =  lapply(1:length(presProb), function(i) {
+    #print(i)
+    roc_obj <- roc(
+      response = presProb[[i]]$y,
+      predictor = presProb[[i]]$fitted.values
+    )
+    
   }
   )
   
