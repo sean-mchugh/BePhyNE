@@ -58,6 +58,10 @@ predict.ENE<-function(traits, pa_data){
   
   #must use pa_data like object with list of list format with data for each sp
   
+  sp_names = lapply(pa_data, function(sp) sp$species)
+  
+  all(rownames(traits[[1]])==sp_names)
+  
   X= lapply(1:nrow(traits[[1]]), function(sp)  lapply(3:length(pa_data[[sp]]), function(pred) pa_data[[sp]][[pred]]))
   
   betas<-lapply(1:length(traits), function(pred) traits2coefs(traits[[pred]]))
@@ -166,7 +170,7 @@ predict_stats  = function(traits, pa_data){
     #print(i)
     roc_obj <- roc(
       response = presProb[[i]]$y,
-      predictor = presProb[[i]]$fitted.values
+      predictor = presProb[[i]]$fitted.values,plot=T
     )
     
   }

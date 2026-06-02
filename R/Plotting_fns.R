@@ -987,8 +987,12 @@ plot_response_curves <- function(tree,
                                  scale_atr=NA,         # list with $center and $scale (same length as predictors)
                                  curve_colors      = rep(make.transparent("black", 255/255), length(models_list)),
                                  curve_fill_colors = rep(make.transparent("white", 255/255), length(models_list)),
+                                 pt_colors         = rep(make.transparent("black", 255/255), length(models_list)),
                                  line_types    = rep(1, length(models_list)),
-                                 xlims = NULL
+                                 xlims = NULL,
+                                 predictor_name_cex = 0.4,
+                                 xlabel_cex         = 0.4,
+                                 tip_cex            = 0.3
 ) {
   
   
@@ -1057,7 +1061,7 @@ plot_response_curves <- function(tree,
   })
   
   par(mar = c(0, 1.5, 0, 1.5), mgp = c(0, 0, 0))
-  plot.phylo(tree, x.lim = c(0, maxX), y.lim = c(-3, ntips + 3), cex = 0.3, no.margin = TRUE)
+  plot.phylo(tree, x.lim = c(0, maxX), y.lim = c(-3, ntips + 3), cex = tip_cex, no.margin = TRUE)
   
   for (pred_idx in seq_len(npreds)) {
     xseq <- predictor_sequences[[pred_idx]]
@@ -1085,7 +1089,7 @@ plot_response_curves <- function(tree,
                 lty = line_types[model_idx])
         }
         peak <- which.max(yvals)
-        points(xxp[peak], tip, pch = "*", col = curve_colors[model_idx], cex = 0.4)
+        points(xxp[peak], tip, pch = "*", col = pt_colors[model_idx], cex = 0.4)
       }
     }
     
@@ -1098,8 +1102,8 @@ plot_response_curves <- function(tree,
     }
     label_xloc <- seq(xplot_range[1], xplot_range[2], length.out = 4)
     
-    text(x = label_xloc, y = rep(-0.2, 4), labels = xlabels, cex = 0.4)
-    text(x = mean(xplot_range), y = ntips + 2, labels = predictor_names[pred_idx], cex = 0.4)
+    text(x = label_xloc, y = rep(-0.2, 4), labels = xlabels, cex = xlabel_cex)
+    text(x = mean(xplot_range), y = ntips + 2, labels = predictor_names[pred_idx], cex = predictor_name_cex)
   }
   
   rep(NA, length(model_names))
@@ -1123,8 +1127,14 @@ plot_summary_ridgeplot = function(tree,
                                   scale_atr         = NA,         # list with $center and $scale (same length as predictors)
                                   curve_colors      = rep(make.transparent("black", 255/255),1),
                                   curve_fill_colors = rep(make.transparent("white", 255/255), 1),
+                                  pt_colors         = rep(make.transparent("black", 255/255), 1),
+                                  
                                   line_types        = rep(1, 1),
-                                  xlims = NULL
+                                  xlims = NULL,
+                                  predictor_name_cex = 0.4,
+                                  xlabel_cex         = 0.4,
+                                  tip_cex            = 0.3
+                                  
 ){
   
   
@@ -1143,8 +1153,13 @@ plot_summary_ridgeplot = function(tree,
                        ,scale_atr         = scale_atr               
                        ,curve_colors      = curve_colors     
                        ,curve_fill_colors = curve_fill_colors
+                       ,pt_colors         = pt_colors         
                        ,line_types        = line_types       
                        ,xlims             = xlims 
+                       ,predictor_name_cex = predictor_name_cex 
+                       ,xlabel_cex         = xlabel_cex 
+                       ,  tip_cex            = tip_cex
+                       
   )
   
   
@@ -1161,8 +1176,14 @@ plot_summarylist_ridgeplot = function(tree,
                                   scale_atr         = NA,         # list with $center and $scale (same length as predictors)
                                   curve_colors      = rep(make.transparent("black", 255/255), length(log_summarylist)),
                                   curve_fill_colors = rep(make.transparent("white", 255/255), length(log_summarylist)),
+                                  pt_colors         = rep(make.transparent("black", 255/255), length(log_summarylist)),
+                                  
                                   line_types        = rep(1, length(log_summarylist)),
-                                  xlims = NULL
+                                  xlims = NULL,
+                                  predictor_name_cex = 0.4,
+                                  xlabel_cex         = 0.4,
+                                  tip_cex            = 0.3
+                                  
 ){
   
   
@@ -1179,15 +1200,17 @@ plot_summarylist_ridgeplot = function(tree,
                        ,model_names       = model_names      
                        ,predictor_names   = predictor_names  
                        ,scale_atr         = scale_atr               
-                       ,curve_colors      = curve_colors     
+                       ,curve_colors      = curve_colors
+                       ,pt_colors         = pt_colors        
                        ,curve_fill_colors = curve_fill_colors
                        ,line_types        = line_types       
                        ,xlims             = xlims 
+                       ,predictor_name_cex = predictor_name_cex 
+                       ,xlabel_cex         = xlabel_cex         
+                       ,  tip_cex            = tip_cex
   )
   
-  
-  
-  
+
 }
 
 
