@@ -376,11 +376,11 @@ priorSim_pars<-function(Prior, phylo, dist, hard_coded_heights=NULL){
       
       for ( pred in 1:length(Prior)){
         
-        Y=((Prior[[pred]]$pars$heights-.05)/.95)
+        Y=((Prior[[pred]]$pars$heights_mean-.05)/.95)
         FT_height_means<- -1*log(Y/(1-Y))
         
         #sd is hardcoded at 0.15 for now, messy I know
-        sim_dat[[pred]][,3]<-rnorm(n=length(FT_height_means), mean = FT_height_means, sd = Prior[[pred]]$pars$heights)
+        sim_dat[[pred]][,3]<-rnorm(n=length(FT_height_means), mean = FT_height_means, sd = Prior[[pred]]$pars$heights_sd)
       
       }
       

@@ -254,8 +254,8 @@ makePrior_ENE<- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd, hei
     Y=((heights_mean_by_sp-.05)/.95)
     FT_heights<- -1*log(Y/(1-Y))
     pars$FT_heights=FT_heights
-    pars$heights=heights_mean_by_sp
-    pars$heights=heights_sd_by_sp
+    pars$heights_mean = heights_mean_by_sp
+    pars$heights_sd   = heights_sd_by_sp
     
     #height_priors=list()
     #making a list of functions rather than one big function so we can call the specific function we want only when the move on that par happens,
