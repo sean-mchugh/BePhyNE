@@ -245,7 +245,7 @@ plot_BePhyNE_simmap(contsimmaps, scale_atr = scale_atr)
 
 Next you can do some model adequacy testing. predict_stats_list will generate a set of Receiver Operator Characteristic statistics, from which we can extract and plot area under the curve (AUC) stats per species. 
 
-```{r, fig.width=14, fig.height=8, out.width="100%"}
+```{r fig.height=8, fig.width=14, message=FALSE, out.width="100%"}
 
 #####AUC################
 
