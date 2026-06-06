@@ -167,7 +167,7 @@ predict_stats  = function(traits, pa_data){
 
 
 
-predict_stats  = function(traits, pa_data){
+predict_stats  = function(traits, pa_data, plot=F){
   
   sp_names = unlist(lapply(pa_data, function(i) i$species))
   
@@ -177,7 +177,7 @@ predict_stats  = function(traits, pa_data){
     #print(i)
     roc_obj <- roc(
       response = presProb[[i]]$y,
-      predictor = presProb[[i]]$fitted.values,plot=T
+      predictor = presProb[[i]]$fitted.values,plot=plot
     )
     
   }
@@ -203,11 +203,11 @@ predict_stats  = function(traits, pa_data){
 #' @return A list of species-level prediction statistics, including AUC where
 #'   available.
 #' @export
-AUC_posterior_median =function(log_summary, pa_data){
+AUC_posterior_median =function(log_summary, pa_data, plot=F){
   
   traits = lapply(log_summary$median_parlist$traits, function(i) i[[1]])
   
-  predict_stats_list = predict_stats(traits, pa_data)
+  predict_stats_list = predict_stats(traits, pa_data, plot=plot)
   
   return(predict_stats_list)
 }
