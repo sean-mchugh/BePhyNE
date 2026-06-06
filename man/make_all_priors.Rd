@@ -21,7 +21,7 @@ make_all_priors(
   use_glm_height_mean = F,
   species_data = NA,
   tree = NA,
-  miss_data_uninf = T,
+  miss_data_uninf = F,
   uninf_height_mean = 0.5,
   uninf_height_sd = 1.5,
   r = 2,

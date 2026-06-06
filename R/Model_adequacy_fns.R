@@ -9,7 +9,8 @@
 #' @param ratio Proportion of presences and absences assigned to the training set.
 #'
 #' @return A list with `training` and `predicting` species data lists.
-#' @export
+#' @name separate.data
+#' @export separate.data
 separate.data<-function(data_final, ratio=.5){
   
   training_set=list()
