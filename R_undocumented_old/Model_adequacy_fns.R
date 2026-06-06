@@ -1,16 +1,5 @@
 
-#' Split BePhyNE data into training and prediction sets
-#'
-#' Randomly partitions presence and absence records within each species while
-#' preserving species entries with missing occurrence data.
-#'
-#' @param data_final A BePhyNE species data list, such as the `data` output from
-#'   [format_BePhyNE_data()].
-#' @param ratio Proportion of presences and absences assigned to the training set.
-#'
-#' @return A list with `training` and `predicting` species data lists.
-#' @export
-#' 
+
 separate.data<-function(data_final, ratio=.5){
   
   training_set=list()
@@ -65,13 +54,9 @@ separate.data<-function(data_final, ratio=.5){
 }
 
 
-predict_ENE<-function(traits, pa_data){
+predict.ENE<-function(traits, pa_data){
   
   #must use pa_data like object with list of list format with data for each sp
-  
-  sp_names = lapply(pa_data, function(sp) sp$species)
-  
-  all(rownames(traits[[1]])==sp_names)
   
   X= lapply(1:nrow(traits[[1]]), function(sp)  lapply(3:length(pa_data[[sp]]), function(pred) pa_data[[sp]][[pred]]))
   
@@ -90,7 +75,7 @@ predict_ENE<-function(traits, pa_data){
 }
 
 
-assess_predict = function(presProb, plot=F){
+assess.predict = function(presProb, plot=F){
   
   if(sum(is.na(presProb$y))==1){
     
@@ -148,17 +133,15 @@ assess_predict = function(presProb, plot=F){
 }
 
 
-
-
 predict_stats  = function(traits, pa_data){
   
   sp_names = unlist(lapply(pa_data, function(i) i$species))
   
-  presProb = predict_ENE(traits, pa_data)
+  presProb = predict.ENE(traits, pa_data)
   
   predict_list =  lapply(1:length(presProb), function(i) {
     #print(i)
-    assess_predict(presProb[[i]])
+    assess.predict(presProb[[i]])
   }
   )
   
@@ -169,43 +152,6 @@ predict_stats  = function(traits, pa_data){
 }
 
 
-
-predict_stats  = function(traits, pa_data){
-  
-  sp_names = unlist(lapply(pa_data, function(i) i$species))
-  
-  presProb = predict_ENE(traits, pa_data)
-  
-  predict_list =  lapply(1:length(presProb), function(i) {
-    #print(i)
-    roc_obj <- roc(
-      response = presProb[[i]]$y,
-      predictor = presProb[[i]]$fitted.values,plot=T
-    )
-    
-  }
-  )
-  
-  names(predict_list) = sp_names
-  
-  return(predict_list)
-  
-}
-
-
-# ---- AUC_posterior_median (Model_adequacy_fns.R) ----
-#' Calculate AUC from posterior median BePhyNE curves
-#'
-#' Uses posterior median niche estimates to predict held-out occurrence records
-#' and calculate species-level classification statistics.
-#'
-#' @param log_summary Summary object returned by [summarize_logdf()].
-#' @param pa_data Prediction/testing data in BePhyNE list format, such as the
-#'   `predicting` element returned by [separate.data()].
-#'
-#' @return A list of species-level prediction statistics, including AUC where
-#'   available.
-#' @export
 AUC_posterior_median =function(log_summary, pa_data){
   
   traits = lapply(log_summary$median_parlist$traits, function(i) i[[1]])

@@ -57,7 +57,7 @@ find_max_heights<-function(data_list, pred, bin_num){
 
 
 
-makePrior_ENE<- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd, heights_mean_by_sp=NULL,  heights_sd_by_sp=0.15, unif.corr=TRUE, Sigma=NULL, nu=NULL, plot=T){
+makePrior_ENE<- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd, heights_by_sp=NULL,  heights_sd=0.15, unif.corr=TRUE, Sigma=NULL, nu=NULL, plot=T){
   
   
   
@@ -139,7 +139,7 @@ makePrior_ENE<- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd, hei
   }
   if(den.mu == "norm"){
     
-    if( is.null(heights_mean_by_sp)==T){
+    if( is.null(heights_by_sp)==T){
       mn<- function(x) sum( c(stats::dnorm(x[1], mean=par.mu.c[[1]], sd=par.mu.c[[2]], log=TRUE),
                               stats::dlnorm(x[2],mean=par.mu.w[[1]], sd=par.mu.w[[2]], log=TRUE),
                               stats::dunif(x[3], min=par.mu.h[[1]], max=par.mu.h[[2]], log=TRUE)
@@ -180,7 +180,7 @@ makePrior_ENE<- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd, hei
       if(plot==T){
         plot(density(stats::rlnorm(10000, meanlog=par.sd[1,1], sdlog=par.sd[1,2]) ), main=paste("r_sd_c") )
         plot(density(stats::rlnorm(10000, meanlog=par.sd[2,1], sdlog=par.sd[2,2]) ), main=paste("r_sd_w") )
-        if( is.null(heights_mean_by_sp)==T){
+        if( is.null(heights_by_sp)==T){
           
           
           plot(density(stats::rlnorm(10000, meanlog=par.sd[3,1], sdlog=par.sd[3,2]) ), main=paste("r_sd_h")  )
@@ -242,7 +242,7 @@ makePrior_ENE<- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd, hei
   ####height prior##
   #height is in the forward transformed space, allows us to use normal distribution for prior rather than beta dist.
   
-  if(is.null(heights_mean_by_sp)==T){
+  if(is.null(heights_by_sp)==T){
     
     height_priors=NULL
     
@@ -251,11 +251,10 @@ makePrior_ENE<- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd, hei
     
     height_priors<-list()
     
-    Y=((heights_mean_by_sp-.05)/.95)
+    Y=((heights_by_sp-.05)/.95)
     FT_heights<- -1*log(Y/(1-Y))
     pars$FT_heights=FT_heights
-    pars$heights_mean = heights_mean_by_sp
-    pars$heights_sd   = heights_sd_by_sp
+    pars$heights=heights_by_sp
     
     #height_priors=list()
     #making a list of functions rather than one big function so we can call the specific function we want only when the move on that par happens,
@@ -263,15 +262,15 @@ makePrior_ENE<- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd, hei
     
     
     height_priors<-lapply(1:length(FT_heights), function(sp){ force(FT_heights[[sp]]);
-      (function(x) dnorm(x, mean=FT_heights[[sp]], heights_sd_by_sp[[sp]], log=T) )  })
+      (function(x) dnorm(x, mean=FT_heights[[sp]], heights_sd, log=T) )  })
     
   
     if(plot==T){
-      plot_heights_ft  = stats::rnorm(10000, mean=FT_heights[[1]], sd =  heights_sd_by_sp[[1]]) 
+      plot_heights_ft  = stats::rnorm(10000, mean=FT_heights[[1]], sd =  heights_sd) 
       plot_heights_bt  = 0.05 + 0.95 * (exp(-1 * plot_heights_ft )/(1 + exp(-1 * plot_heights_ft )))
       plot(density(plot_heights_ft),    main=paste("heights_ft") )
       plot(density( plot_heights_bt ), main=paste("heights_bt") )
-      if( is.null(heights_mean_by_sp)==T){
+      if( is.null(heights_by_sp)==T){
         
         
         plot(density(stats::rlnorm(10000, meanlog=par.sd[3,1], sdlog=par.sd[3,2]) ), main=paste("r_sd_h")  )
@@ -289,45 +288,6 @@ makePrior_ENE<- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd, hei
 
 
 
-#' Construct default BePhyNE prior objects
-#'
-#' Builds one prior object per environmental predictor for the root niche
-#' parameters, evolutionary variance parameters, correlations, and species-level
-#' tolerance/height terms. This is the high-level prior constructor used in the
-#' vignette.
-#'
-#' @param N Number of environmental predictors.
-#' @param tips Number of species/tips in the phylogeny.
-#' @param bd_range Optional breadth range object; currently forwarded internally
-#'   when supplied.
-#' @param root_opt_mean,root_opt_sd Mean and standard deviation for the root
-#'   optimum prior, one value per predictor.
-#' @param root_brdth_meanlog,root_brdth_sdlog Meanlog and sdlog for the root
-#'   breadth prior, one value per predictor.
-#' @param sigsq_opt_meanlog,sigsq_opt_sdlog Meanlog and sdlog for the optimum
-#'   evolutionary variance prior.
-#' @param sigsq_brdth_meanlog,sigsq_brdth_sdlog Meanlog and sdlog for the breadth
-#'   evolutionary variance prior.
-#' @param heights_mean_by_sp Prior mean for the species-level tolerance/height
-#'   parameter.
-#' @param heights_sd_by_sp Prior standard deviation for the species-level
-#'   tolerance/height parameter.
-#' @param use_glm_height_mean Logical; if `TRUE`, estimate height priors from GLM
-#'   starting values using `species_data` and `tree`.
-#' @param species_data Optional BePhyNE data list used when estimating GLM-based
-#'   height means.
-#' @param tree Optional phylo object used when estimating GLM-based height means.
-#' @param miss_data_uninf Logical; if `TRUE`, use a broader height prior for
-#'   species with missing data.
-#' @param uninf_height_mean,uninf_height_sd Mean and standard deviation for the
-#'   broader missing-data height prior.
-#' @param r Number of niche traits in the multivariate Brownian-motion prior.
-#' @param p Number of rate regimes.
-#' @param plot Logical; if `TRUE`, plot prior densities where implemented.
-#'
-#' @return A list of BePhyNE prior objects, one per predictor.
-#' @export
-
 make_all_priors <- function(
     N,
     tips,
@@ -343,14 +303,8 @@ make_all_priors <- function(
     sigsq_brdth_meanlog   = rep(log(.1),  N),
     sigsq_brdth_sdlog     = rep(0.5,      N),
     # ── heights (default hard‑coded) ─────────────────────────────
-    heights_mean_by_sp         = sample(.95, size = tips, replace = TRUE),
-    heights_sd_by_sp           = sample(.15, size = tips, replace = TRUE), #0.15,
-    use_glm_height_mean   = F,
-    species_data          = NA,
-    tree                  = NA,
-    miss_data_uninf    = F, #if a species doesnt have data put an uninformative on height
-    uninf_height_mean = 0.5, #set uninfromative prior smack in the middle of height
-    uninf_height_sd   = 1.5, #set uninformative prior high 
+    heights_by_sp         = sample(.95, size = tips, replace = TRUE),
+    heights_sd            = 0.15,
     # ── constants forwarded to makePrior_ENE ─────────────────────
     r = 2, p = 1,
     plot = TRUE
@@ -373,70 +327,15 @@ make_all_priors <- function(
     }
   }
   
-  if(use_glm_height_mean){
-    
-    
-    GLM_only_ml   <-try(MLglmStartpars_general(species_data = species_data, tree = tree, height = NULL))
-    
-    if(class(GLM_only_ml )=="try-error"){
-      cat("Warning: no data provided, cannot calculate height priors using GLM, using heights_mean_by_sp and heights_sd_by_sp")
-    }else{
-      heights_mean_by_sp <- GLM_only_ml$start_pars_bt[[1]][,3]
-    }
-    
-    
-  }
-
-  
-  if(!(class(heights_mean_by_sp)%in%c("vector"))){
-    heights_mean_by_sp= unlist(replicate(tips, heights_mean_by_sp, simplify = FALSE))
-  }
-  
-  if(!(class(heights_sd_by_sp)%in%c("vector"))){
-    heights_sd_by_sp= unlist(replicate(tips, heights_sd_by_sp, simplify = FALSE))
-  }
-  
-  #confirm heights have same names for borth
-  
-  if(any(names(heights_sd_by_sp) != names(heights_mean_by_sp))){
-    cat("warning heights priors for mean and sd dont have the same names, using mean names for height names")
-    names(heights_sd_by_sp) = names(heights_mean_by_sp)
-  }
-  
-  if(miss_data_uninf){
-    
-    
-    miss_dat = try(which(unlist(lapply( species_data, function(i) all(is.na(i$y))))))
-  
-    if(class(miss_dat)=="try-error"){
-      cat("Warning: no data provided, cant identify if any species are missing data, assuming all species have full data")
-    }else{
-      heights_mean_by_sp[miss_dat] = uninf_height_mean
-    
-      heights_sd_by_sp[miss_dat] = uninf_height_sd 
-    }
-  }
-  
   ## 0. Coerce heights into a list of length N ------------------
-  #height_mean_list <- if (is.list(heights_mean_by_sp)){
-  #  stopifnot(length(heights_mean_by_sp) == N)
-  #  heights_mean_by_sp
-  #} else {
-  #  replicate(N, heights_mean_by_sp, simplify = FALSE)
-  #}
-  #
-#
-  #names(heights_sd_by_sp) = names(heights_mean_by_sp)
-  #
-  #height_sd_list <- if (is.list(heights_sd_by_sp)){
-  #  stopifnot(length(heights_sd_by_sp) == N)
-  #  heights_sd_by_sp
-  #} else {
-  #  replicate(N, heights_sd_by_sp, simplify = FALSE)
-  #}
+  height_list <- if (is.list(heights_by_sp)){
+    stopifnot(length(heights_by_sp) == N)
+    heights_by_sp
+  } else {
+    replicate(N, heights_by_sp, simplify = FALSE)
+  }
   
-
-    ## 1. Build priors for each character -------------------------
+  ## 1. Build priors for each character -------------------------
   prior_scale <- lapply(seq_len(N), function(i){
     
     ## μ matrix (2 × 2)
@@ -449,13 +348,11 @@ make_all_priors <- function(
                           sigsq_brdth_meanlog[i], sigsq_brdth_sdlog[i]),
                         nrow = 2, byrow = TRUE)
     
-    
-    
     makePrior_ENE(
       r   = r,  p = p,
       den.mu = "norm",
-      heights_mean_by_sp = heights_mean_by_sp,
-      heights_sd = heights_sd_by_sp,
+      heights_by_sp = height_list[[i]],
+      heights_sd = heights_sd,
       par.mu = par_mu,
       den.sd = "lnorm",
       par.sd = par_sigsq,

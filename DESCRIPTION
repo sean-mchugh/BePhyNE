@@ -39,4 +39,4 @@ Depends:
     pROC,
     R (>= 3.5)
 VignetteBuilder: knitr
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3

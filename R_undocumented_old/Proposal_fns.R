@@ -1,25 +1,5 @@
 #######proposal functions#########################################################################################################################################################################
 
-#' Make BePhyNE MCMC tuning parameters
-#'
-#' Creates proposal tuning values and move probabilities for the BePhyNE MCMC.
-#'
-#' @param tree A phylo object.
-#' @param pred Number of environmental predictors.
-#' @param center_slide,center_mult Slide and multiplier tuning widths for niche
-#'   optima.
-#' @param width_slide,width_mult Slide and multiplier tuning widths for niche
-#'   breadths.
-#' @param height_slide,height_mult Slide and multiplier tuning widths for
-#'   tolerance/height.
-#' @param w_mu Tuning vector for root-mean proposals.
-#' @param w_sd Tuning vector for evolutionary standard-deviation proposals.
-#' @param v_cor Inverse-Wishart/correlation proposal tuning parameter.
-#' @param weights_height,weights_center,weights_width,weights_theta,weights_R_corr,weights_R_sd
-#'   Relative proposal weights for each move type.
-#'
-#' @return A list with `tuning` and `move_probs`.
-#' @export
 make_tuning <- function(tree, pred,
                         center_slide = 0.18,
                         center_mult  = 0.12,
@@ -124,6 +104,51 @@ propMVBM_by_clade <- function( tree, td, R, R_cor, R_sd, theta, n, curr_jac, V=N
   return(list(td=td, hr=hr, missing=missing, n=n, K=K, A=theta, R=R, R_cor=R_cor, R_sd=R_sd, prop_jac=curr_jac, jj=0))
 }
 
+Slide_Proposal_byClade_byTrait_fn <- function(tree, td, R, R_cor, R_sd, theta, n, curr_jac, d, niche_move){
+  #d=.2
+  # full_td<-td
+  #td<-full_td
+  #
+  #tree=tree
+  #td=td[[x]]
+  #R=current_vals[[1]][[1]][[x]]$R
+  #R_cor=current_vals[[1]][[1]][[x]]$R_cor
+  #R_sd=current_vals[[1]][[1]][[x]]$R_sd
+  #theta=current_vals[[1]][[1]][[x]]$A
+  #n=n
+  #curr_jac=current_vals[[1]][[1]][[x]]$curr.jac
+  #H_fixed=H_fixed
+  #d=d[[x]]
+  node =  sample(1:(length(tree$tip.label)+tree$Nnode  ) ,1)
+  #extract clade to make shift
+  if(node <= length(tree$tip.label)){
+    clade <- list(tip.label=tree$tip.label[node])
+  } else {
+    clade<-extract.clade(tree, node = node )
+  }
+  #td$dat[tree[[1]]$tip.label==clade$tip.label]
+  ntraits <- ncol(td$dat)
+  dat <- data.frame(species=tree$tip.label, td$dat)
+  class(clade$tip.label[1])
+  class(tree$tip.label[1])
+  missing<-(1:nrow(dat))[tree$tip.label%in%clade$tip.label]
+  old <- td$dat[missing,]
+  if( niche_move=="center"){
+    prop <- d * (stats::runif(1) - 0.5) + as.vector(t(old[,1]))
+    hr <- 0
+    td$dat[missing,1] <- matrix(prop, nrow=length(clade$tip.label), ncol=1, byrow = TRUE)
+  } else if ( niche_move=="width"){
+    prop <- d * (stats::runif(1) - 0.5) + as.vector(t(old[,2]))
+    hr <- 0
+    td$dat[missing,2] <- matrix(prop, nrow=length(clade$tip.label), ncol=1, byrow = TRUE)
+  }else if ( niche_move=="height"){
+    prop <- d * (stats::runif(1) - 0.5) + as.vector(t(old[,3]))
+    hr <- 0
+    td$dat[missing,3] <- matrix(prop, nrow=length(clade$tip.label), ncol=1, byrow = TRUE)
+  }
+  return(list(td=td, hr=hr, missing=missing, n=n, K=NULL, A=theta, R=R, R_cor=R_cor, R_sd=R_sd, prop_jac=curr_jac, jj=0))
+}
+
 
 Slide_Proposal_byClade_byTrait_fn <- function(tree, td, R, R_cor, R_sd, theta, n, curr_jac, d, niche_move, clade){
   #d=.2
@@ -206,6 +231,47 @@ Slide_Proposal_fn <- function(tree, td, R, R_cor, R_sd, theta, n, curr_jac, d, n
   return(list(td=td, hr=hr, missing=missing, n=n, K=NULL, A=theta, R=R, R_cor=R_cor, R_sd=R_sd, prop_jac=curr_jac, jj=0))
 }
 
+
+Multiplier_Proposal_byClade_byTrait_fn <- function(tree, td, R, R_cor, R_sd, theta, n, curr_jac, d, niche_move){
+  # d=.2
+
+  node =  sample((length(tree$tip.label)+1):(length(tree$tip.label)+tree$Nnode  ) ,1)
+  #extract clade to make shift
+  clade<-extract.clade(tree, node = node )
+  #td$dat[tree[[1]]$tip.label==clade$tip.label]
+
+  dat <- data.frame(species=tree$tip.label, td$dat)
+  missing<-(1:nrow(td$dat))[tree$tip.label%in%clade$tip.label]
+
+  old <- td$dat[missing,]
+  m <- exp(d * (stats::runif(1) - 0.5))
+  #prop <- as.vector(t(old)) * m
+  #hr <- log(m)
+  if( niche_move=="center"){
+
+    prop <- as.vector(t(old[,1])) * m
+    hr <- log(m)
+
+    td$dat[missing,1] <- matrix(prop, nrow=length(clade$tip.label), ncol=1, byrow = TRUE)
+
+  } else if( niche_move=="width") {
+
+    prop <- as.vector(t(old[,2])) * m
+    hr <- log(m)
+
+    td$dat[missing,2] <- matrix(prop, nrow=length(clade$tip.label), ncol=1, byrow = TRUE)
+
+  }else if( niche_move=="height") {
+
+    prop <- as.vector(t(old[,3])) * m
+    hr <- log(m)
+
+    td$dat[missing,3] <- matrix(prop, nrow=length(clade$tip.label), ncol=1, byrow = TRUE)
+
+  }
+
+  return(list(td=td, hr=hr, missing=missing, n=n, K=NULL, A=theta, R=R, R_cor=R_cor, R_sd=R_sd, prop_jac=curr_jac, jj=0))
+}
 
 
 
@@ -319,6 +385,9 @@ riwish <- function(v, S){
   return(solve(out))
 }
 
+makePropIWish_C <- function(vcv, k, v) {
+  .Call('_ratematrix_makePropIWish_C', PACKAGE = 'ratematrix', vcv, k, v)
+}
 
 #hotfix for .call being pain on HPC, use for HPCs
 makePropIWish_C <- function(curr.vcv, k, v){
@@ -348,6 +417,9 @@ logDensityIWish <- function(W, v, S){
   return(lnum - ldenom)
 }
 
+cov2cor_C <- function(V) {
+  .Call('_ratematrix_cov2cor_C', PACKAGE = 'ratematrix', V)
+}
 
 ##hotfix for .call being pain on HPC, use for HPCs
 

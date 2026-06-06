@@ -752,6 +752,7 @@ plotTraces<-function(trimmed_chain, plot.true=T, True_pars){
 
 
 
+
 PlotBePhyNEchains<-function(mcmc_object, dir=NA, name="BePhyNE", traces=T, densities=T){
   
   
@@ -987,12 +988,8 @@ plot_response_curves <- function(tree,
                                  scale_atr=NA,         # list with $center and $scale (same length as predictors)
                                  curve_colors      = rep(make.transparent("black", 255/255), length(models_list)),
                                  curve_fill_colors = rep(make.transparent("white", 255/255), length(models_list)),
-                                 pt_colors         = rep(make.transparent("black", 255/255), length(models_list)),
                                  line_types    = rep(1, length(models_list)),
-                                 xlims = NULL,
-                                 predictor_name_cex = 0.4,
-                                 xlabel_cex         = 0.4,
-                                 tip_cex            = 0.3
+                                 xlims = NULL
 ) {
   
   
@@ -1061,7 +1058,7 @@ plot_response_curves <- function(tree,
   })
   
   par(mar = c(0, 1.5, 0, 1.5), mgp = c(0, 0, 0))
-  plot.phylo(tree, x.lim = c(0, maxX), y.lim = c(-3, ntips + 3), cex = tip_cex, no.margin = TRUE)
+  plot.phylo(tree, x.lim = c(0, maxX), y.lim = c(-3, ntips + 3), cex = 0.3, no.margin = TRUE)
   
   for (pred_idx in seq_len(npreds)) {
     xseq <- predictor_sequences[[pred_idx]]
@@ -1089,7 +1086,7 @@ plot_response_curves <- function(tree,
                 lty = line_types[model_idx])
         }
         peak <- which.max(yvals)
-        points(xxp[peak], tip, pch = "*", col = pt_colors[model_idx], cex = 0.4)
+        points(xxp[peak], tip, pch = "*", col = curve_colors[model_idx], cex = 0.4)
       }
     }
     
@@ -1102,8 +1099,8 @@ plot_response_curves <- function(tree,
     }
     label_xloc <- seq(xplot_range[1], xplot_range[2], length.out = 4)
     
-    text(x = label_xloc, y = rep(-0.2, 4), labels = xlabels, cex = xlabel_cex)
-    text(x = mean(xplot_range), y = ntips + 2, labels = predictor_names[pred_idx], cex = predictor_name_cex)
+    text(x = label_xloc, y = rep(-0.2, 4), labels = xlabels, cex = 0.4)
+    text(x = mean(xplot_range), y = ntips + 2, labels = predictor_names[pred_idx], cex = 0.4)
   }
   
   rep(NA, length(model_names))
@@ -1127,14 +1124,8 @@ plot_summary_ridgeplot = function(tree,
                                   scale_atr         = NA,         # list with $center and $scale (same length as predictors)
                                   curve_colors      = rep(make.transparent("black", 255/255),1),
                                   curve_fill_colors = rep(make.transparent("white", 255/255), 1),
-                                  pt_colors         = rep(make.transparent("black", 255/255), 1),
-                                  
                                   line_types        = rep(1, 1),
-                                  xlims = NULL,
-                                  predictor_name_cex = 0.4,
-                                  xlabel_cex         = 0.4,
-                                  tip_cex            = 0.3
-                                  
+                                  xlims = NULL
 ){
   
   
@@ -1153,13 +1144,8 @@ plot_summary_ridgeplot = function(tree,
                        ,scale_atr         = scale_atr               
                        ,curve_colors      = curve_colors     
                        ,curve_fill_colors = curve_fill_colors
-                       ,pt_colors         = pt_colors         
                        ,line_types        = line_types       
                        ,xlims             = xlims 
-                       ,predictor_name_cex = predictor_name_cex 
-                       ,xlabel_cex         = xlabel_cex 
-                       ,  tip_cex            = tip_cex
-                       
   )
   
   
@@ -1176,14 +1162,8 @@ plot_summarylist_ridgeplot = function(tree,
                                   scale_atr         = NA,         # list with $center and $scale (same length as predictors)
                                   curve_colors      = rep(make.transparent("black", 255/255), length(log_summarylist)),
                                   curve_fill_colors = rep(make.transparent("white", 255/255), length(log_summarylist)),
-                                  pt_colors         = rep(make.transparent("black", 255/255), length(log_summarylist)),
-                                  
                                   line_types        = rep(1, length(log_summarylist)),
-                                  xlims = NULL,
-                                  predictor_name_cex = 0.4,
-                                  xlabel_cex         = 0.4,
-                                  tip_cex            = 0.3
-                                  
+                                  xlims = NULL
 ){
   
   
@@ -1200,171 +1180,17 @@ plot_summarylist_ridgeplot = function(tree,
                        ,model_names       = model_names      
                        ,predictor_names   = predictor_names  
                        ,scale_atr         = scale_atr               
-                       ,curve_colors      = curve_colors
-                       ,pt_colors         = pt_colors        
+                       ,curve_colors      = curve_colors     
                        ,curve_fill_colors = curve_fill_colors
                        ,line_types        = line_types       
                        ,xlims             = xlims 
-                       ,predictor_name_cex = predictor_name_cex 
-                       ,xlabel_cex         = xlabel_cex         
-                       ,  tip_cex            = tip_cex
   )
   
-
+  
+  
+  
 }
 
-
-#' Plot Species Response Curves from One or More Summary Objects
-#'
-#' Generates ridge-style response curve plots from one or more BePhyNE
-#' summary objects. If a single summary object is supplied, a single model
-#' is plotted. If a list of summary objects is supplied, response curves are
-#' overlaid for comparison among models.
-#'
-#' The function extracts median species-level trait estimates from
-#' `median_parlist$traits` and passes them to
-#' [plot_response_curves()] for visualization.
-#'
-#' @param tree A phylogenetic tree of class `"phylo"`.
-#'
-#' @param log_summary Either a single summary object produced by [summarize_logdf()], or a list of such summary objects.
-#'
-#' @param model_names Character vector of model names used in the plot legend.
-#'   If `NULL`, names are generated automatically as `"model1"`,
-#'   `"model2"`, etc.
-#'
-#' @param predictor_names Character vector giving predictor names for each
-#'   environmental variable. If `NA`, generic names (`"Predictor 1"`,
-#'   `"Predictor 2"`, etc.) are used.
-#'
-#' @param scale_atr Optional scaling information used to back-transform
-#'   predictor values. Typically a list containing elements `center`
-#'   and `scale`. Defaults to `NA`.
-#'
-#' @param curve_colors Character vector of line colors for each model.
-#'
-#' @param curve_fill_colors Character vector of fill colors for each model.
-#'
-#' @param pt_colors Character vector of point colors for each model.
-#'
-#' @param line_types Integer or character vector specifying line types for
-#'   each model.
-#'
-#' @param xlims Optional list of x-axis limits, one element per predictor.
-#'   If `NULL`, limits are determined automatically.
-#'
-#' @param predictor_name_cex Numeric scaling factor for predictor labels.
-#'
-#' @param xlabel_cex Numeric scaling factor for x-axis labels.
-#'
-#' @param tip_cex Numeric scaling factor for phylogeny tip labels.
-#'
-#' @details
-#' For each model, the function extracts median trait estimates from
-#' `median_parlist$traits`. Each predictor is expected to contain a matrix
-#' of species-specific niche parameters (e.g., optimum, breadth, tolerance).
-#'
-#' Multiple models are plotted simultaneously by overlaying response curves
-#' for direct visual comparison.
-#'
-#' @return Invisibly returns the output of [plot_response_curves()].
-#'
-#' @examples
-#' \dontrun{
-#'
-#' # Single model
-#' plot_summary_ridgeplot(
-#'   tree = tree,
-#'   log_summary = full_log_summary
-#' )
-#'
-#' # Multiple models
-#' plot_summary_ridgeplot(
-#'   tree = tree,
-#'   log_summary = list(
-#'     full_log_summary,
-#'     miss_log_summary
-#'   ),
-#'   model_names = c(
-#'     "With data",
-#'     "Missing data"
-#'   )
-#' )
-#'
-#' }
-#'
-#' @seealso [plot_response_curves()]
-#'
-#' @export
-
-plot_summary_ridgeplot <- function(tree,
-                                   log_summary,
-                                   model_names       = NULL,
-                                   predictor_names   = NA,
-                                   scale_atr         = NA,
-                                   curve_colors      = NULL,
-                                   curve_fill_colors = NULL,
-                                   pt_colors         = NULL,
-                                   line_types        = NULL,
-                                   xlims = NULL,
-                                   predictor_name_cex = 0.4,
-                                   xlabel_cex         = 0.4,
-                                   tip_cex            = 0.3) {
-  
-  is_single_summary <- !is.null(log_summary$median_parlist)
-  
-  log_summarylist <- if (is_single_summary) {
-    list(log_summary)
-  } else {
-    log_summary
-  }
-  
-  n_models <- length(log_summarylist)
-  
-  if (is.null(model_names)) {
-    model_names <- paste0("model", seq_len(n_models))
-  }
-  
-  if (is.null(curve_colors)) {
-    curve_colors <- rep(make.transparent("black", 255/255), n_models)
-  }
-  
-  if (is.null(curve_fill_colors)) {
-    curve_fill_colors <- rep(make.transparent("white", 255/255), n_models)
-  }
-  
-  if (is.null(pt_colors)) {
-    pt_colors <- rep(make.transparent("black", 255/255), n_models)
-  }
-  
-  if (is.null(line_types)) {
-    line_types <- rep(1, n_models)
-  }
-  
-  model_list <- lapply(log_summarylist, function(x) {
-    lapply(x$median_parlist$traits, function(i) i[[1]])
-  })
-  
-  if (length(predictor_names) == 1 && is.na(predictor_names)) {
-    predictor_names <- paste0("Predictor ", seq_along(model_list[[1]]))
-  }
-  
-  plot_response_curves(
-    tree               = tree,
-    models_list        = model_list,
-    model_names        = model_names,
-    predictor_names    = predictor_names,
-    scale_atr          = scale_atr,
-    curve_colors       = curve_colors,
-    curve_fill_colors  = curve_fill_colors,
-    pt_colors          = pt_colors,
-    line_types         = line_types,
-    xlims              = xlims,
-    predictor_name_cex = predictor_name_cex,
-    xlabel_cex         = xlabel_cex,
-    tip_cex            = tip_cex
-  )
-}
 
 plot_AUC_treebarplot = function(tree, predict_stats_list, cols= c("blue"), xlim =c(0,100), fsize = 0.6, mar = c(5.1, 1, 1.1, 0.5),  label.offset=1){
   
@@ -1393,113 +1219,7 @@ plot_AUC_treebarplot = function(tree, predict_stats_list, cols= c("blue"), xlim 
 }
 
 
-#' Plot AUC Values on a Phylogeny
-#'
-#' Computes posterior-median AUC values from one or more summary objects and
-#' plots them as bars beside a phylogeny.
-#'
-#' @param tree A phylogeny of class `"phylo"`.
-#' @param log_summary A single summary object or a list of summary objects.
-#' @param predicting Prediction data passed to [AUC_posterior_median()].
-#' @param model_names Optional names for each summary object.
-#' @param cols Bar colors.
-#' @param xlim Numeric vector giving x-axis limits.
-#' @param fsize Tip-label size for the tree.
-#' @param mar Plot margins for the tree.
-#' @param label.offset Offset between tip labels and bars.
-#' @param threshold_lines Optional numeric vector giving vertical reference lines.
-#' @param threshold_col Color for reference lines.
-#' @param threshold_lty Line type for reference lines.
-#' @param threshold_lwd Line width for reference lines.
-#'
-#' @return Invisibly returns the object produced by [plotTree.barplot()].
-#'
-#' @export
-plot_AUC_treebarplot <- function(tree,
-                                 log_summary,
-                                 predicting,
-                                 model_names = NULL,
-                                 cols = NULL,
-                                 xlim = c(50, 100),
-                                 fsize = 0.6,
-                                 mar = c(5.1, 1, 1.1, 0.5),
-                                 label.offset = 1,
-                                 threshold_lines = c(70, 80, 90),
-                                 threshold_col = 2,
-                                 threshold_lty = 2,
-                                 threshold_lwd = 4) {
-  
-  is_single_summary <- !is.null(log_summary$median_parlist)
-  
-  log_summarylist <- if (is_single_summary) {
-    list(log_summary)
-  } else {
-    log_summary
-  }
-  
-  n_models <- length(log_summarylist)
-  
-  if (is.null(model_names)) {
-    model_names <- paste0("model", seq_len(n_models))
-  }
-  
-  if (is.null(cols)) {
-    cols <- rep("blue", n_models)
-  }
-  
-  AUC_list <- lapply(log_summarylist, function(x) {
-    out <- AUC_posterior_median(x, predicting)
-    
-    auc <- unlist(lapply(out, function(i) {
-      if (!is.null(i$auc)) {
-        i$auc
-      } else {
-        i$AUC
-      }
-    }))
-    
-    auc
-  })
-  
-  AUC_df <- do.call(cbind, AUC_list) * 100
-  colnames(AUC_df) <- model_names
-  rownames(AUC_df) <- tree$tip.label
-  
-  if (n_models == 1) {
-    AUC_df <- as.numeric(AUC_df[, 1])
-    names(AUC_df) <- tree$tip.label
-  }
-  
-  bp <- plotTree.barplot(
-    tree,
-    AUC_df,
-    args.barplot = list(
-      beside = TRUE,
-      col = cols,
-      border = cols,
-      xlab = "AUC",
-      xlim = xlim,
-      mar = c(5.1, 0, 0.1, 4),
-      space = if (n_models == 1) 0.5 else c(0, 1.5)
-    ),
-    args.plotTree = list(
-      fsize = fsize,
-      mar = mar,
-      label.offset = label.offset
-    )
-  )
-  
-  if (!is.null(threshold_lines)) {
-    abline(
-      v = threshold_lines,
-      lty = threshold_lty,
-      lwd = threshold_lwd,
-      col = threshold_col
-    )
-  }
-  
-  invisible(bp)
-}
+
 
 
 
@@ -1708,18 +1428,6 @@ legend.evorates_mod =function (sim, location = c("bottomleft", "topleft", "botto
 }
 
 
-
-#' Plot BePhyNE continuous stochastic maps
-#'
-#' Plots continuous stochastic maps generated by [make_simmaps_BePhyNE()].
-#'
-#' @param contsimmaps Continuous stochastic maps returned by
-#'   [make_simmaps_BePhyNE()].
-#' @param scale_atr Optional scaling attributes from [format_BePhyNE_data()] used
-#'   to label or back-transform mapped values where implemented.
-#'
-#' @return Called for its plotting side effect.
-#' @export
 
 plot_BePhyNE_simmap = function(contsimmaps, scale_atr=NA){
   #par(mfrow = c(2,2))

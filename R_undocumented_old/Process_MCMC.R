@@ -1,12 +1,5 @@
 
-#' Read a BePhyNE parameter log
-#'
-#' Loads a tab-delimited `.pars.log` file produced by [BePhyNE_MCMC()].
-#'
-#' @param file_name Path to the BePhyNE log file returned by [BePhyNE_MCMC()].
-#'
-#' @return A data frame containing sampled MCMC parameter values.
-#' @export
+
 read_BePhyNE_log=function(file_name){
   read.table(file_name,sep = "\t", header = T)
 }
@@ -17,65 +10,8 @@ colMedians_df <- function(df) {
   as.data.frame(t(medians), stringsAsFactors = FALSE)
 }
 
-one_row_to_pred_list <- function(x, exp_breadth = FALSE) {
-  
-  x <- as.data.frame(x, check.names = FALSE)
-  
-  cn <- colnames(x)
-  
-  pred_ids <- unique(sub("^(pred_[0-9]+)_dat\\..*$", "\\1",
-                         grep("^pred_[0-9]+_dat\\.", cn, value = TRUE)))
-  
-  out <- lapply(pred_ids, function(pred) {
-    
-    opt_cols <- grep(paste0("^", pred, "_dat\\.opt_"), cn, value = TRUE)
-    brd_cols <- grep(paste0("^", pred, "_dat\\.brdth_"), cn, value = TRUE)
-    tol_cols <- grep(paste0("^", pred, "_dat\\.tol_"), cn, value = TRUE)
-    
-    species <- sub(paste0("^", pred, "_dat\\.opt_"), "", opt_cols)
-    
-    opt <- as.numeric(x[1, opt_cols])
-    brd <- as.numeric(x[1, brd_cols])
-    tol <- as.numeric(x[1, tol_cols])
-    
-    if (exp_breadth) {
-      brd <- exp(brd)
-    }
-    
-    names(opt) <- species
-    names(brd) <- species
-    names(tol) <- species
-    
-    list(
-      optimum = opt,
-      breadth = brd,
-      tolerance = tol
-    )
-  })
-  
-  names(out) <- pred_ids
-  
-  out
-}
 
-mat_to_traits <- function(mat) {
-  
-  cn <- colnames(mat)
-  
-  preds <- unique(sub("_(opt|brdth|tol)$", "", cn))
-  
-  lapply(preds, function(p) {
-    list(
-      optimum   = mat[1, paste0(p, "_opt")],
-      breadth   = mat[1, paste0(p, "_brdth")],
-      tolerance = mat[1, paste0(p, "_tol")]
-    )
-  }) |>
-    setNames(preds)
-}
-
-
-logdf2traitsdf_list = function(logdf, transform2nichespace=F, logrows= 1:nrow(logdf)){
+logdf2traitsdf_list = function(logdf, transform2nichespace=T, logrows= 1:nrow(logdf)){
 
   predictors <- unique(gsub("pred_(\\d+)_.*", "\\1", grep("^pred_\\d+_", names(logdf), value = TRUE)))
   pred_prefix <- paste0("pred_", predictors, "_")
@@ -142,81 +78,6 @@ logdf2traitsdf_list = function(logdf, transform2nichespace=F, logrows= 1:nrow(lo
 
 
 
-logdf2traitsdf_list <- function(logdf,
-                                transform2nichespace = F,
-                                logrows = seq_len(nrow(logdf))) {
-  
-  trait_order <- c("opt", "brdth", "tol")
-  
-  trait_cols <- grep("^pred_\\d+_dat\\.", names(logdf), value = TRUE)
-  
-  meta <- data.frame(
-    colname = trait_cols,
-    pred    = sub("^pred_(\\d+)_.*$", "\\1", trait_cols),
-    label   = sub("^pred_\\d+_dat\\.", "", trait_cols),
-    stringsAsFactors = FALSE
-  )
-  
-  meta$trait   <- sub("_.*$", "", meta$label)
-  meta$species <- sub("^[^_]+_", "", meta$label)
-  
-  predictors <- unique(meta$pred)
-  
-  traits_df_list <- setNames(vector("list", length(predictors)), predictors)
-  
-  for (pred in predictors) {
-    
-    meta_pred <- meta[meta$pred == pred, ]
-    
-    species_order <- unique(meta_pred$species)
-    
-    wanted <- expand.grid(
-      trait = trait_order,
-      species = species_order,
-      stringsAsFactors = FALSE
-    )
-    
-    wanted$colname <- paste0(
-      "pred_", pred, "_dat.",
-      wanted$trait, "_",
-      wanted$species
-    )
-    
-    col_order <- match(wanted$colname, names(logdf))
-    
-    mat <- as.matrix(logdf[logrows, col_order, drop = FALSE])
-    
-    traits_df_list[[pred]] <- lapply(seq_len(nrow(mat)), function(i) {
-      
-      out <- matrix(
-        mat[i, ],
-        nrow = length(species_order),
-        ncol = length(trait_order),
-        byrow = T,
-        dimnames = list(species_order, trait_order)
-      )
-      
-      if (transform2nichespace) {
-        out <- do.call(
-          rbind,
-          lapply(seq_len(nrow(out)), function(j) {
-            backTransform1(out[j, ])
-          })
-        )
-        
-        rownames(out) <- species_order
-        colnames(out) <- trait_order
-      }
-      
-      out
-    })
-  }
-  
-  return(traits_df_list)
-}
-
-
-
 logdf2R_list = function(logdf, logrows= 1:nrow(logdf)){
 
 
@@ -269,7 +130,7 @@ logdf2R_list = function(logdf, logrows= 1:nrow(logdf)){
 }
 
 
-logdf2A_list = function(logdf, transform2nichespace=F, logrows= 1:nrow(logdf)){
+logdf2A_list = function(logdf, transform2nichespace=T, logrows= 1:nrow(logdf)){
 
   predictors <- unique(gsub("pred_(\\d+)_.*", "\\1", grep("^pred_\\d+_", names(logdf), value = TRUE)))
 
@@ -300,7 +161,7 @@ logdf2A_list = function(logdf, transform2nichespace=F, logrows= 1:nrow(logdf)){
 }
 
 
-logdf2parlist = function(logdf, transform2nichespace=F, logrows= 1:nrow(logdf)){
+logdf2parlist = function(logdf, transform2nichespace=T, logrows= 1:nrow(logdf)){
 
   traits_list = logdf2traitsdf_list(logdf, transform2nichespace, logrows)
 
@@ -323,66 +184,32 @@ logdf2parlist = function(logdf, transform2nichespace=F, logrows= 1:nrow(logdf)){
 
 logdf2medians = function(logdf){
 
-  medians = colMedians_df(df = logdf)
+  medians = colMedians_df(logdf)
 
-  return(logdf2parlist(logdf = medians, logrows = nrow(medians)))
+  return(logdf2parlist(logdf = medians))
 
 
 }
 
 
-#' Summarize a BePhyNE MCMC log
-#'
-#' Calculates posterior medians, highest posterior density intervals, and
-#' effective sample sizes from a BePhyNE log data frame.
-#'
-#' @param logdf Data frame returned by [read_BePhyNE_log()].
-#' @param HPD_prob Probability mass for highest posterior density intervals.
-#' @param scale_atr Optional scaling attributes from [format_BePhyNE_data()] used
-#'   to back-transform and denormalize summaries.
-#'
-#' @return A list containing posterior summaries for traits, root parameters,
-#'   covariance parameters, and diagnostics.
-#' @export
-summarize_logdf=function(logdf, HPD_prob=0.95,scale_atr=NA){
-  
-  
-  predictors <- unique(gsub("pred_(\\d+)_.*", "\\1", grep("^pred_\\d+_", names(logdf), value = TRUE)))
+
+summarize_logdf=function(logdf, HPD_prob=0.95){
   
   mcmc_obj = coda::as.mcmc(logdf[,-1])
   mcmc_ESS = effectiveSize(mcmc_obj)
   mcmc_HPD = HPDinterval(mcmc_obj, prob = HPD_prob)
 
-  mcmc_median_df      = colMedians_df(df = logdf)
-  
-
-  for(pred in predictors){
-    
-    pred_prefix <- paste0("pred_", pred, "_")
-    
-    A_cols <- grep(paste0("^", pred_prefix, "A\\d+"), names(logdf), value = TRUE)
-
-    mcmc_median_df[A_cols]  = backTransform1(unlist(c(mcmc_median_df[A_cols],1) ))[1:2]
-  }
-
-  
-  mcmc_median_parlist      =  logdf2medians(logdf = logdf)
+  mcmc_median_df      = colMedians_df(logdf)
+  mcmc_median_parlist = logdf2medians(logdf)
   mcmc_HPDlower_parlist    = logdf2parlist(logdf = as.data.frame(t(mcmc_HPD[,1])))
   mcmc_HPDupper_parlist    = logdf2parlist(logdf = as.data.frame(t(mcmc_HPD[,2])))
   
   
-  summary = list( ESS = mcmc_ESS
+  summary = list(ESS = mcmc_ESS
                  ,HPD = mcmc_HPD
                  ,median_df = mcmc_median_df
                  ,median_parlist = mcmc_median_parlist
                  ,HPDlower_parlist = mcmc_HPDlower_parlist 
                  ,HPDupper_parlist = mcmc_HPDupper_parlist 
                  )
-  
-  summary = backtransform_denormalize_logsummary(summary,scale_atr = scale_atr)
-  
-  return(summary)
 }
-
-
-

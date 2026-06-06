@@ -1,28 +1,13 @@
 
 
 
-# ---- make_simmaps_BePhyNE (ContSimmap_fns.R) ----
-#' Simulate continuous maps from BePhyNE posterior samples
-#'
-#' Converts sampled BePhyNE posterior parameters into continuous stochastic maps
-#' for niche optimum and breadth traits.
-#'
-#' @param tree A phylo object.
-#' @param logdf BePhyNE MCMC log data frame returned by [read_BePhyNE_log()].
-#' @param char_names Optional character names for the simulated continuous
-#'   characters. If `NA`, names are generated from predictor indices.
-#' @param nsims Number of posterior samples/maps to simulate.
-#'
-#' @return A list of continuous stochastic maps produced by
-#'   `contsimmap::make.contsimmap()`.
-#' @export
 
 make_simmaps_BePhyNE=function( tree, 
                                logdf,
                                char_names =NA, 
                                nsims = 10){
   
-  parlist = logdf2parlist(logdf, transform2nichespace = F, logrows = sample(1:nrow(logdf), nsims))
+  parlist = logdf2parlist(logdf, transform2nichespace = F, logrows = sample(1:nrow(logdf),nsims))
   
   if(sum(is.na(char_names))==1){
     

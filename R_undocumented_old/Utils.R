@@ -3,67 +3,34 @@
 
 '%!in%' <- function(x,y)!('%in%'(x,y))
 
-
-
-#' Format presence/absence data for BePhyNE
-#'
-#' Converts a presence/absence data frame into the list-of-lists format used by
-#' BePhyNE, orders species to match the supplied phylogeny, optionally scales
-#' environmental predictors, and stores the scaling attributes needed for later
-#' back-transformation.
-#'
-#' @param pa_data A data frame containing species names, presence/absence values,
-#'   and environmental predictor columns.
-#' @param tree A phylo object whose tip labels define the species order.
-#' @param sp_col Name or index of the species column in `pa_data`.
-#' @param occ_col Name or index of the presence/absence column in `pa_data`;
-#'   values should be coded as 0/1.
-#' @param env_preds Character vector giving the environmental predictor columns
-#'   to include.
-#' @param scale_atr Optional list with `center` and `scale` entries, usually
-#'   returned by a previous call to this function. If `NA`, scaling parameters
-#'   are estimated from `pa_data`.
-#' @param normalize_data Logical; if `TRUE`, center and scale the environmental
-#'   predictors.
-#'
-#' @return A list with elements `data`, the species-ordered BePhyNE data object,
-#'   and `scale`, the scaling attributes used for predictors.
-#' @export
-
-format_BePhyNE_data = function(pa_data, tree, sp_col, occ_col, env_preds, scale_atr=NA, normalize_data=T){
+format_BePhyNE_data = function(pa_data, tree, sp_col, occ_col, env_preds, scale_atr=NA){
 
   pres_data_scaled= pa_data
 
-  if(normalize_data==T){
-    if( sum(is.na(scale_atr))>0){
-      scaled_climate = scale(pa_data[,env_preds])
-  
-      pres_data_scaled[,env_preds]= scaled_climate[,env_preds]
-  
-      scale_atr <- list(scale=lapply(env_preds, function(pred)(attr(scaled_climate , "scaled:scale")[colnames(scaled_climate)==pred])),
-                        center= lapply(env_preds, function(pred) (attr(scaled_climate,  "scaled:center")[colnames(scaled_climate)==pred]))
-      )
-  
-      names(scale_atr$scale) = env_preds
-      names(scale_atr$center) = env_preds
-  
-  
-    } else{
-  
-  
-      scaled_climate = do.call(cbind ,lapply(env_preds, function(pred) (pa_data[,pred]-scale_atr$center[[pred]])/scale_atr$scale[[pred]]) )
-  
-      colnames(scaled_climate) = env_preds
-  
-      pres_data_scaled[,env_preds]= scaled_climate[,env_preds]
-  
-    }
-    
-  }else{
-    
-    scale_atr = NA
+  if( sum(is.na(scale_atr))>0){
+    scaled_climate = scale(pa_data[,env_preds])
+
+    pres_data_scaled[,env_preds]= scaled_climate[,env_preds]
+
+    scale_atr <- list(scale=lapply(env_preds, function(pred)(attr(scaled_climate , "scaled:scale")[colnames(scaled_climate)==pred])),
+                      center= lapply(env_preds, function(pred) (attr(scaled_climate,  "scaled:center")[colnames(scaled_climate)==pred]))
+    )
+
+    names(scale_atr$scale) = env_preds
+    names(scale_atr$center) = env_preds
+
+
+  } else{
+
+
+    scaled_climate = do.call(cbind ,lapply(env_preds, function(pred) (pa_data[,pred]-scale_atr$center[[pred]])/scale_atr$scale[[pred]]) )
+
+    colnames(scaled_climate) = env_preds
+
+    pres_data_scaled[,env_preds]= scaled_climate[,env_preds]
+
   }
-  
+
   data_final <- lapply(split(pres_data_scaled[c(occ_col, env_preds)],pres_data_scaled[sp_col]), as.list)
   #replace vector of species names with a single name
   data_final_tree = list()
@@ -74,15 +41,6 @@ format_BePhyNE_data = function(pa_data, tree, sp_col, occ_col, env_preds, scale_
     data_final[[sp_name]] = data_final[[sp_name]][c(sp_col, occ_col, env_preds)]
     names( data_final[[sp_name]]) =c("species", "y", paste0("X", 1:(length(names( data_final[[sp_name]]))-2)) )
 
-    if(is.na(data_final[[sp_name]]$species)){
-      data_final[[sp_name]]$species= sp_name
-     for(x in 2:length(data_final[[sp_name]])) {
-       data_final[[sp_name]][[x]]=NA
-       
-     }
-      
-    }
-    
     data_final_tree[[sp_name]] = data_final[[sp_name]]
   }
 
