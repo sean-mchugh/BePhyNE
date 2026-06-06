@@ -1392,16 +1392,16 @@ plot_AUC_treebarplot = function(tree, predict_stats_list, cols= c("blue"), xlim 
   
 }
 
-
 #' Plot AUC Values on a Phylogeny
 #'
-#' Computes posterior-median AUC values from one or more summary objects and
-#' plots them as bars beside a phylogeny.
+#' Plot one or more sets of AUC values as bars beside a phylogeny.
 #'
 #' @param tree A phylogeny of class `"phylo"`.
-#' @param log_summary A single summary object or a list of summary objects.
-#' @param predicting Prediction data passed to [AUC_posterior_median()].
-#' @param model_names Optional names for each summary object.
+#' @param predict_stats_list A list of prediction-statistic objects, or a list
+#'   of such lists. Each species-level object should contain an `AUC` or `auc`
+#'   element.
+#' @param model_names Optional model names used as column names when plotting
+#'   multiple AUC sets.
 #' @param cols Bar colors.
 #' @param xlim Numeric vector giving x-axis limits.
 #' @param fsize Tip-label size for the tree.
@@ -1416,63 +1416,71 @@ plot_AUC_treebarplot = function(tree, predict_stats_list, cols= c("blue"), xlim 
 #'
 #' @export
 plot_AUC_treebarplot <- function(tree,
-                                 log_summary,
-                                 predicting,
+                                 predict_stats_list,
                                  model_names = NULL,
                                  cols = NULL,
-                                 xlim = c(50, 100),
+                                 xlim = c(0, 100),
                                  fsize = 0.6,
                                  mar = c(5.1, 1, 1.1, 0.5),
                                  label.offset = 1,
-                                 threshold_lines = c(70, 80, 90),
+                                 threshold_lines = NULL,
                                  threshold_col = 2,
                                  threshold_lty = 2,
                                  threshold_lwd = 4) {
   
-  is_single_summary <- !is.null(log_summary$median_parlist)
-  
-  log_summarylist <- if (is_single_summary) {
-    list(log_summary)
-  } else {
-    log_summary
+  get_auc <- function(x) {
+    out <- unlist(lapply(x, function(i) {
+      if (!is.null(i$AUC)) {
+        i$AUC
+      } else {
+        i$auc
+      }
+    }))
+    
+    out
   }
   
-  n_models <- length(log_summarylist)
+  is_single_auc_set <- !is.null(predict_stats_list[[1]]$AUC) ||
+    !is.null(predict_stats_list[[1]]$auc)
   
-  if (is.null(model_names)) {
-    model_names <- paste0("model", seq_len(n_models))
+  auc_plot_data <- if (is_single_auc_set) {
+    get_auc(predict_stats_list)
+  } else {
+    auc_list <- lapply(predict_stats_list, get_auc)
+    do.call(cbind, auc_list)
+  }
+  
+  if (is.matrix(auc_plot_data)) {
+    n_models <- ncol(auc_plot_data)
+    
+    if (is.null(model_names)) {
+      model_names <- paste0("model", seq_len(n_models))
+    }
+    
+    colnames(auc_plot_data) <- model_names
+  } else {
+    n_models <- 1
   }
   
   if (is.null(cols)) {
     cols <- rep("blue", n_models)
   }
   
-  AUC_list <- lapply(log_summarylist, function(x) {
-    out <- AUC_posterior_median(x, predicting)
-    
-    auc <- unlist(lapply(out, function(i) {
-      if (!is.null(i$auc)) {
-        i$auc
-      } else {
-        i$AUC
-      }
-    }))
-    
-    auc
-  })
+  if (max(auc_plot_data, na.rm = TRUE) <= 1) {
+    auc_plot_data <- auc_plot_data * 100
+  }
   
-  AUC_df <- do.call(cbind, AUC_list) * 100
-  colnames(AUC_df) <- model_names
-  rownames(AUC_df) <- tree$tip.label
+  rownames_or_names <- tree$tip.label
   
-  if (n_models == 1) {
-    AUC_df <- as.numeric(AUC_df[, 1])
-    names(AUC_df) <- tree$tip.label
+  if (is.matrix(auc_plot_data)) {
+    rownames(auc_plot_data) <- rownames_or_names
+  } else {
+    names(auc_plot_data) <- rownames_or_names
   }
   
   bp <- plotTree.barplot(
     tree,
-    AUC_df,
+    auc_plot_data,
     args.barplot = list(
       beside = TRUE,
       col = cols,
@@ -1500,7 +1508,6 @@ plot_AUC_treebarplot <- function(tree,
   
   invisible(bp)
 }
-
 
 
 legend.evorates_mod =function (sim, location = c("bottomleft", "topleft", "bottomright", 
