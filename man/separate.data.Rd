@@ -7,15 +7,13 @@
 \method{separate}{data}(data_final, ratio = 0.5)
 }
 \arguments{
-\item{data_final}{A BePhyNE species data list, such as the `data` output from
-[format_BePhyNE_data()].}
+\item{data_final}{A BePhyNE species data list.}
 
-\item{ratio}{Proportion of presences and absences assigned to the training set.}
+\item{ratio}{Proportion assigned to training.}
 }
 \value{
-A list with `training` and `predicting` species data lists.
+A list with `training` and `predicting`.
 }
 \description{
-Randomly partitions presence and absence records within each species while
-preserving species entries with missing occurrence data.
+Split BePhyNE data into training and prediction sets
 }

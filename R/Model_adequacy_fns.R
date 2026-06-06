@@ -1,16 +1,13 @@
 
 #' Split BePhyNE data into training and prediction sets
 #'
-#' Randomly partitions presence and absence records within each species while
-#' preserving species entries with missing occurrence data.
+#' @param data_final A BePhyNE species data list.
+#' @param ratio Proportion assigned to training.
 #'
-#' @param data_final A BePhyNE species data list, such as the `data` output from
-#'   [format_BePhyNE_data()].
-#' @param ratio Proportion of presences and absences assigned to the training set.
-#'
-#' @return A list with `training` and `predicting` species data lists.
-#' @name separate.data
-#' @export separate.data
+#' @return A list with `training` and `predicting`.
+#' @export
+#' @rawNamespace export(separate.data)
+#' 
 separate.data<-function(data_final, ratio=.5){
   
   training_set=list()
