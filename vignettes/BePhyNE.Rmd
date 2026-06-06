@@ -102,7 +102,8 @@ We do not believe this actually reflects prevalence, but instead error in sampli
 bd_range = c(0.1, 1.5)
 bd = bd_range[[2]] - bd_range[[1]]
 
-Prior_scale = make_all_priors(Npred, length(tree$tip.label),
+Prior_scale = make_all_priors(N = Npred, 
+                              tips = length(tree$tip.label),
                               bd_range = bd_range,
                               # ── μ (root) priors ──────────────────────────────────────────
                               root_opt_mean         = rep(0,        Npred),
@@ -115,7 +116,7 @@ Prior_scale = make_all_priors(Npred, length(tree$tip.label),
                               sigsq_brdth_meanlog   = rep(log(bd),  Npred),
                               sigsq_brdth_sdlog     = rep(0.5,      Npred),
                               # ── heights (default hard‑coded) ─────────────────────────────
-                              heights_by_sp         = sample(.95, size = Ntips, replace = TRUE),
+                              heights_mean_by_sp    = sample(.95, size = Ntips, replace = TRUE),
                               # ── constants forwarded to makePrior_ENE ─────────────────────
                               r = Npred, p = 1,
                               plot = TRUE
@@ -172,7 +173,7 @@ results = BePhyNE_MCMC(tree
                        ,iterations = iterations
                        ,trim_freq  = trim_freq
                        ,write2file = T
-                       ,append2existingfile = T
+                       ,append2existingfile = F
                        ,filename
 )
 
