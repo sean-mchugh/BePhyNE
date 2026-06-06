@@ -10,7 +10,6 @@
 #'
 #' @return A list with `training` and `predicting` species data lists.
 #' @export
-#' 
 separate.data<-function(data_final, ratio=.5){
   
   training_set=list()
