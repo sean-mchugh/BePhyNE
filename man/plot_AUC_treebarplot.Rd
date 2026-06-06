@@ -6,15 +6,14 @@
 \usage{
 plot_AUC_treebarplot(
   tree,
-  log_summary,
-  predicting,
+  predict_stats_list,
   model_names = NULL,
   cols = NULL,
-  xlim = c(50, 100),
+  xlim = c(0, 100),
   fsize = 0.6,
   mar = c(5.1, 1, 1.1, 0.5),
   label.offset = 1,
-  threshold_lines = c(70, 80, 90),
+  threshold_lines = NULL,
   threshold_col = 2,
   threshold_lty = 2,
   threshold_lwd = 4
@@ -23,11 +22,12 @@ plot_AUC_treebarplot(
 \arguments{
 \item{tree}{A phylogeny of class `"phylo"`.}
 
-\item{log_summary}{A single summary object or a list of summary objects.}
+\item{predict_stats_list}{A list of prediction-statistic objects, or a list
+of such lists. Each species-level object should contain an `AUC` or `auc`
+element.}
 
-\item{predicting}{Prediction data passed to [AUC_posterior_median()].}
-
-\item{model_names}{Optional names for each summary object.}
+\item{model_names}{Optional model names used as column names when plotting
+multiple AUC sets.}
 
 \item{cols}{Bar colors.}
 
@@ -51,6 +51,5 @@ plot_AUC_treebarplot(
 Invisibly returns the object produced by [plotTree.barplot()].
 }
 \description{
-Computes posterior-median AUC values from one or more summary objects and
-plots them as bars beside a phylogeny.
+Plot one or more sets of AUC values as bars beside a phylogeny.
 }
