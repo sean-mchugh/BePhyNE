@@ -1080,7 +1080,18 @@ plot_response_curves <- function(tree,
         yvals <- response_function(beta_coef[[1]] + beta_coef[[2]]*xseq + beta_coef[[3]]*xseq^2)
         
         if(!is.na(curve_fill_colors[[model_idx]])){
-          polygon(xxp[yvals >.01], yvals[yvals > 0.01] + tip, col=curve_fill_colors[[model_idx]],density=NA,lwd=.5,border=curve_colors[[model_idx]])
+          #polygon(xxp[yvals >.01], yvals[yvals > 0.01] + tip, col=curve_fill_colors[[model_idx]],density=NA,lwd=.5,border=curve_colors[[model_idx]])
+          if(!is.na(curve_fill_colors[[model_idx]])){
+            polygon(
+              c(xxp[yvals > 0.01], rev(xxp[yvals > 0.01])),
+              c(yvals[yvals > 0.01] + tip, rep(tip, length(yvals[yvals > 0.01]))),
+              col = curve_fill_colors[[model_idx]],
+              density = NA,
+              lwd = 0.5,
+              border = NA
+            )
+          }
+
         }
         if(!is.na(line_types[[model_idx]])){
           lines(xxp[yvals > 0.01], yvals[yvals > 0.01] + tip,

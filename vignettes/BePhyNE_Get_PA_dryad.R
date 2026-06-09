@@ -115,6 +115,8 @@ values_pres<-occ_search(gbif_taxon_keys, hasCoordinate=TRUE, limit = 10000, star
 
 {
 
+#saveRDS(values_pres, "GBIF_clim_pres.RDS")
+  
 #values_pres <- readRDS("GBIF_clim_pres.RDS")
 
 
@@ -435,7 +437,7 @@ for (i in 1:length(values_pres_abs_out)){
                                     "X2"=values_pres_abs_all[[i]][,3])
 }
 
-#scaled data final by scaled presences (I was bum an didnt scale them originally by presences and thought i could scale it by pres and absences...but then you would be scaling them by the absences too which is strange..didnt want to be a bum and did it by presences, ideally you determine scaling yb full worlclim data but i was having trouble extracting the full values from the raster)
+#scaled data final by scaled presences (I didnt scale them originally by presences and thought i could scale it by pres and absences...but then you would be scaling them by the absences too which is strange.. did it by presences, ideally you determine scaling yb full worlclim data but i was having trouble extracting the full values from the raster)
 data_new_final<-data_new_final_unscaled
 
 
@@ -491,7 +493,7 @@ phylo$edge.length<-phylo$edge.length/(max(branching.times(phylo)))
 
 ENA_Pletho_PA<-do.call(rbind, lapply(1:length(data_new_final), function(sp) do.call(cbind,data_new_final[[sp]]) ))
 
-#saveRDS(ENA_Pleth_PA,"ENA_Pleth_PA" )
+saveRDS(ENA_Pleth_PA,"ENA_Pleth_PA.RDS" )
 
 ENA_Pleth_PA<-as.data.frame(readRDS("ENA_Pletho_PA.RDS"),row.names = F)
 as.numeric(ENA_Pleth_PA)
